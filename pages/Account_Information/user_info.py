@@ -8,9 +8,9 @@ def logout_func() -> None:
     st.session_state.clear()
 
 def show_group_users() -> None:
-    username = st.session_state["logged_user_info"]["username"]
+    group_id = st.session_state["logged_user_info"]["group_id"]
     db_obj = user_info_db.create_user_info_mongo_connection()
-    result = user_info_db.fetch_group_users(db_obj, username)
+    result = user_info_db.fetch_group_users(db_obj, group_id)
     if isList(result):
         st.table(result)
     else:

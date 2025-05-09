@@ -79,16 +79,16 @@ def fetch_user(db: object, data: dict) -> dict | str:
     except Exception as e:
         return e
 
-def fetch_group_users(db: object, username: str) -> list | str:
+def fetch_group_users(db: object, group_id: str) -> list | str:
     """
-    Fetch all users from group_user table on basis of username
+    Fetch all users from group_user table on basis of group_id
     """
     try:
         group_collection = db[_get_config("user_info", "group_user_collection")]
 
-        #Fetch record from group_user collection on basis of username
+        #Fetch records from group_user collection on basis of group_id
         result_group = group_collection.find({
-                    "username": username})
+                    "group_id": group_id})
         
         result = []
         for group in result_group:
