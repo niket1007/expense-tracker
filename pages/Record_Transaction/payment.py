@@ -14,29 +14,11 @@ def init_db():
         st.cache_resource.clear()
         st.error("Error: {0}".format(result))
 
-# def payment_app__link_button():
-#     st.link_button("Paytm", "paytmmp://pay?pa=your@vpa&pn=YourName&tn=Note&am=1&cu=INR")
-#     st.link_button("PhonePe", "phonepe://pay?pa=your@vpa&pn=YourName&tn=Note&am=1&cu=INR")
-#     st.link_button("Google Pay", "tez://upi/pay?pa=your@vpa&pn=YourName&tn=Note&am=1&cu=INR")
-
-@st.dialog("QR Scanner")
-def open_camera(data: dict, db: object):
-    scanned_qr_code = qrcode_scanner(key='qrcode_scanner')
-
-    if scanned_qr_code:
-        print(data, scanned_qr_code)
-        if not isEmpty(data["amount"]):
-            scanned_qr_code += "&am=" + data["amount"]
-        if not isEmpty(data["category_name"]):
-            scanned_qr_code += "&tn=" + data["category_name"]
-        paytm_link = scanned_qr_code.replace("upi", "paytmmp")
-        phonepe_link = scanned_qr_code.replace("upi", "phonepe")
-        gpay_link = scanned_qr_code.replace("upi://","tez://upi/")
-        # print(paytm_link, gpay_link, phonepe_link)
-        # st.link_button("Pay", scanned_qr_code)
-        st.link_button("Paytm", paytm_link)
-        st.link_button("PhonePe", phonepe_link)
-        st.link_button("Google Pay", gpay_link)
+@st.dialog("Payment Apps")
+def show_payment_app_buttons():
+    st.link_button("Paytm", "intent://upi#Intent;scheme=paytmmp;package=net.one97.paytm;end;")
+    st.link_button("PhonePe", "intent://home#Intent;scheme=phonepe;package=com.phonepe.app;end;")
+    st.link_button("Google Pay", "intent://upi#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;end;")
         
 def save_transaction(data, db):
     result = transaction_data_validator(data)
@@ -60,26 +42,16 @@ def payment_tab(category_list, money_source_list, db):
             "payment_to": "",
             "category_name": category_option
         }
-        col1, col2 = st.columns(2, gap="small")
-        with col1:
-            submitted = st.form_submit_button("Pay(QR Scan)")
-            if submitted:
-                status = save_transaction(data, db)
-                if isSuccess(status):
-                    st.success("Transaction recorded.")
-                    open_camera(data, db)
-                else:
-                    st.cache_resource.clear()
-                    st.error("Error: {0}".format(status))
-        with col2:
-            submitted = st.form_submit_button("Pay (Add record)")
-            if submitted:
-                status = save_transaction(data, db)
-                if isSuccess(status):
-                    st.success("Transaction recorded.")
-                else:
-                    st.cache_resource.clear()
-                    st.error("Error: {0}".format(status))
+        
+        submitted = st.form_submit_button("Pay (Add record)")
+        if submitted:
+            status = save_transaction(data, db)
+            if isSuccess(status):
+                show_payment_app_buttons()
+                st.success("Transaction recorded.")
+            else:
+                st.cache_resource.clear()
+                st.error("Error: {0}".format(status))
 
 def main():
     """
