@@ -63,6 +63,8 @@ def convert_to_df(data: dict) -> object:
 
 def transaction_data_validator(data: dict):
     valid = "Success"
+
+    # Type Validation
     if data["type"] == "Income":
         for key in data:
             if key != "payment_from" and isEmpty(data[key]):
@@ -82,6 +84,12 @@ def transaction_data_validator(data: dict):
         if data["payment_from"] == data["payment_to"]:
             valid = "Transfer from and to option cannot be same."
             return valid
+
+    # Field Validation
+    if not data["amount"].isnumeric():
+        valid = "Amount field can have only numeric values."
+        return valid
+
     return valid
 
 def get_month_and_year_list():
