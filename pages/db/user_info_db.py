@@ -5,6 +5,9 @@ import pymongo
 
 CONFIG_PATH = os.path.abspath('pages/db/config.ini')
 
+def cache_clear():
+    st.cache_resource.clear()
+
 def _get_config(key1: str, key2: str) -> str:
     """Get the value of a key from the config file."""
     config = configparser.ConfigParser()
@@ -19,7 +22,6 @@ def create_user_info_mongo_connection() -> object:
         db = client[_get_config('user_info', 'database_name')]        
         return db
     except Exception as e:
-        print("here error")
         return e
 
 def insert_user(db: object, data: dict) -> list | str:
@@ -73,9 +75,10 @@ def fetch_user(db: object, data: dict) -> dict | str:
         else:
             raise Exception("User doesn't exist.")
 
-        return [{"username": result_login["username"],
-                "group_id": result_group["group_id"]}]
-    
+        return [{
+            "username": result_login["username"],
+            "group_id": result_group["group_id"]
+        }]
     except Exception as e:
         return e
 
@@ -89,11 +92,9 @@ def fetch_group_users(db: object, group_id: str) -> list | str:
         #Fetch records from group_user collection on basis of group_id
         result_group = group_collection.find({
                     "group_id": group_id})
-        
-        result = []
-        for group in result_group:
-            result.append({"username": group["username"]})
-        return result
-        
+
+        return [
+            {"username": group["username"]} for group in result_group
+        ]
     except Exception as e:
         return e

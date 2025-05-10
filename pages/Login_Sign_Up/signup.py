@@ -6,8 +6,8 @@ from pages.db import user_info_db
 
 def init_db():
     db_obj = user_info_db.create_user_info_mongo_connection()
-    if isEmptyObject(db_obj):
-        st.cache_data.clear()
+    if not isMongoDbObject(db_obj):
+        user_info_db.cache_clear()
         st.error("Error: {0}".format(db_obj))
         return None
     return db_obj
@@ -23,7 +23,7 @@ def sign_up_func(db_obj: object, data: dict) -> None:
 
         if not isList(result):
             if str(result) != "User already exist.":
-                st.cache_resource.clear()
+                user_info_db.cache_clear()
             st.error("Error: {0}".format(result))
             return
         st.session_state["isUserLoggedIn"] = True
@@ -37,7 +37,7 @@ def main():
     db_obj = init_db()
 
     # Check if connection is successful
-    if not isEmptyObject(db_obj):
+    if isMongoDbObject(db_obj):
         st.header("Sign Up", divider="blue")
         username = st.text_input("Enter your username", placeholder="Username",key="signup_username")
         password = st.text_input("Enter your password", type="password", placeholder="Password", key="signup_password")

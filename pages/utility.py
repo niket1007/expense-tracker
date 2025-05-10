@@ -1,33 +1,7 @@
 import pandas as pd
 from datetime import date
 import json
-import streamlit as st
-import sqlitecloud as sqllite
-
-
-# ------------------------------Cache Function Start
-
-@st.cache_resource
-def get_db_connection():
-    """ create a database connection to a SQLite database """
-    try:
-        #print("called in utility.py")
-        conn = sqllite.connect(st.secrets["sqllite"]["db_url"])
-        return conn
-    except sqllite.Error as e:
-        # #print(f"Error connecting to database: {e}")
-        st.cache_resource.clear()
-        return e
-
-@st.cache_resource
-def get_payment_options(_db):
-    return _db.fetch_payment_option_records()
-
-@st.cache_resource
-def get_category(_db):
-    return _db.fetch_category_records()
-
-# ------------------------------Cache Function End
+import pymongo
 
 
 # ------------------------------Utility Function Start
@@ -62,6 +36,7 @@ def isDict(value:object) -> bool:
     Check if a value is a dictionary.
     """
     return isinstance(value, dict)
+
 def isList(value:object) -> bool:   
     """
     Check if a value is a list.
@@ -74,6 +49,12 @@ def isSuccess(result:object) -> bool:
     """
     return result == "Success"
 
+def isMongoDbObject(value: object):
+    """
+    Check if a value is mongo db object
+    """
+    return isinstance(value, pymongo.synchronous.database.Database)
+
 def convert_to_df(data: dict) -> object:
     """
     Convert a dict to a DataFrame.
@@ -82,21 +63,20 @@ def convert_to_df(data: dict) -> object:
 
 def transaction_data_validator(data: dict):
     valid = "Success"
-    if data["transaction_type"] == "Income":
+    if data["type"] == "Income":
         for key in data:
             if key != "payment_from" and isEmpty(data[key]):
                 valid = "Provide value for {0}".format(key)
                 return valid
-    elif data["transaction_type"] == "Payment":
+    elif data["type"] == "Payment":
         for key in data:
-            #print(key, type(data[key]))
             if key != "payment_to" and isEmpty(data[key]):
                 valid = "Provide value for {0}".format(key)
                 return valid
 
-    elif data["transaction_type"] == "Transfer":
+    elif data["type"] == "Transfer":
         for key in data:
-            if key != "category_name" and isEmpty(data[key]):
+            if key != "category" and isEmpty(data[key]):
                 valid = "Provide value for {0}".format(key)
                 return valid        
         if data["payment_from"] == data["payment_to"]:
@@ -104,12 +84,11 @@ def transaction_data_validator(data: dict):
             return valid
     return valid
 
-def get_month_and_year_list(current=False):
+def get_month_and_year_list():
     current_year = int(date.today().strftime("%Y"))
-    current_month = date.today().strftime("%b")
     year = [str(year) for year in range(current_year, current_year+10)]
-    month = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July"
-            , "Aug", "Sept", "Oct", "Nov", "Dec"]
+    month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"
+            , "Aug", "Sep", "Oct", "Nov", "Dec"]
     
     return [year, month]
 

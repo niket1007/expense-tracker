@@ -3,50 +3,48 @@ from pages.db import custom_db
 from pages.utility import *
 
 def init_db():
-    #print(st.session_state)
-    db_name = st.session_state["logged_user_info"]["group_id"]
-    conn = get_db_connection()
-    db = custom_db.CustomDb(conn, db_name)
-    result = db.create_tables()
-    if isSuccess(result):
-        return db
-    if not isSuccess(result):
-        st.cache_resource.clear()
-        st.error("Error: {0}".format(result))
+    group_id = st.session_state["logged_user_info"]["group_id"]
+    db_obj = custom_db.create_user_info_mongo_connection(group_id)
+    if not isMongoDbObject(db_obj):
+        custom_db.clear_cache()
+        st.error("Error: {0}".format(db_obj))
+        return None
+    return db_obj
 
-def save_payment_option(payment_source_name, db):
-    if not isEmpty(payment_source_name):
-        result = db.insert_money_source_record({"payment_option_name": payment_source_name})
+def save_payment_options(db_obj: object, payment_option_name: str) -> None:
+    if not isEmpty(payment_option_name):
+        result = custom_db.insert_payment_option_record(
+            db_obj,{"name": payment_option_name})
         if isSuccess(result):
+            custom_db.clear_cache("Cache_Data")
             st.success("Payment option added successfully")
-            st.cache_resource.clear()
         else:
-            st.cache_resource.clear()
+            custom_db.clear_cache()
             st.error("Error: {0}".format(result))
 
-def crud_payment_options(money_source_dict, db):
-    with st.form("crud_payment", border=False, enter_to_submit=False):
-        payment_source_name = st.text_input("Enter Payment option name", placeholder="Payment Option Name", key="payment_option_name")
-        submitted = st.form_submit_button("Save the changes")
-        if submitted:
-            save_payment_option(payment_source_name, db)
-            money_source_dict = db.fetch_payment_option_records()
-        if not isList(money_source_dict):
-            st.cache_resource.clear()
-            st.error("Error: {0}".format(money_source_dict))    
-        elif not isEmptyList(money_source_dict):
-            st.subheader("Available Payment options")
-            st.table(convert_to_df(money_source_dict))
+def show_payment_options(payment_options: list) -> None:
+    if not isList(payment_options):
+        custom_db.clear_cache()
+        st.error("Error: {0}".format(payment_options))    
+    elif not isEmptyList(payment_options):
+        with st.container(height=500, border=False):
+            st.subheader("Available payment_options")
+            st.table(convert_to_df(payment_options))
+
+def crud_payment_options(db_obj: object, payment_options: list) -> None:
+    payment_option_name = st.text_input(
+        "Enter Payment option name",
+        placeholder="Payment Option Name",
+        key="payment_option_name")
+    st.button("Save the changes",
+            on_click=save_payment_options, 
+            args=(db_obj, payment_option_name))
+    show_payment_options(payment_options)
 
 def main():
-    custom_db = init_db()
-    if not isEmptyObject(custom_db):
-        money_source_dict = custom_db.fetch_payment_option_records()
-        if not isList(money_source_dict):
-            st.cache_resource.clear()
-            st.error("Error: {0}".format(money_source_dict))
-            return
-
-    crud_payment_options(money_source_dict, custom_db)
+    db_obj = init_db()
+    if isMongoDbObject(db_obj):    
+        payment_options = custom_db.fetch_all_payment_options(db_obj)
+        crud_payment_options(db_obj, payment_options)
 
 main()

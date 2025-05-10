@@ -1,56 +1,68 @@
 import streamlit as st
-from pages.utility import *
 from pages.db import custom_db
+from pages.utility import *
 
-def init_db():
-    db_name = st.session_state["logged_user_info"]["group_id"]
-    conn = get_db_connection()
-    db = custom_db.CustomDb(conn, db_name)
-    result = db.create_tables()
-    if isSuccess(result):
-        return db
-    if not isSuccess(result):
-        st.cache_resource.clear()
-        st.error("Error: {0}".format(result))
+def init_db() -> None:
+    group_id = st.session_state["logged_user_info"]["group_id"]
+    db_obj = custom_db.create_user_info_mongo_connection(group_id)
+    if not isMongoDbObject(db_obj):
+        custom_db.clear_cache()
+        st.error("Error: {0}".format(db_obj))
+        return None
+    return db_obj
 
-def create_budget(db):
+def create_budget(db_object: object) -> None:
     """
     Create budget for a particular year and month
     """
     with st.form("create_budget"):
+        
         year, month = get_month_and_year_list()
+        
         col1, col2 = st.columns(2)
+        
         with col1:
             month = st.selectbox("Select month", month)
+        
         with col2:
             year = st.selectbox("Select year", year)
-        category_list = get_category(db)
         
-        for category in category_list:
-            category["budget"] = 0
-        changed_df = st.data_editor(convert_to_df(category_list))
-        # #print(changed_df)
-        submitted = st.form_submit_button("Create")
-        if submitted:
-            # #print(changed_df)
-            data = {
-                "year": year,
-                "month": month,
-                "budget": changed_df.to_json(orient='records')
-            }
-            #print(data)
-            result = db.insert_budget_record(data)
-            if isSuccess(result):
-                st.success("Budget Added")
-            else:
-                st.cache_resource.clear()
-                st.error("Error: {0}".format(result))
+        category_list = custom_db.fetch_all_categories(db_object)
+        
+        if isList(category_list):
+            
+            if not isEmptyList(category_list):
+                
+                for category in category_list:
+                    category["budget"] = 0
+                
+                changed_df = st.data_editor(convert_to_df(category_list))
+                
+                submitted = st.form_submit_button("Create")
+                
+                if submitted:
+                
+                    data = {
+                        "year": year,
+                        "month": month,
+                        "budget": changed_df.to_json(orient='records')
+                    }
+                    result = custom_db.insert_budget_record(db_object, data)
+                    
+                    if isSuccess(result):
+                        st.success("Budget Added")
+                    else:
+                        custom_db.clear_cache()
+                        st.error("Error: {0}".format(result))
+        else:
+            custom_db.clear_cache()
+            st.error("Error: {0}".format(category_list))
 
 
-def main():
-    custom_db = init_db()
-    if not isEmptyObject(custom_db):
+def main() -> None:
+    db_object = init_db()
+    if isMongoDbObject(db_object):
         st.header("Create Budget", divider="blue")
-        create_budget(custom_db)
+        create_budget(db_object)
 
 main()
