@@ -1,42 +1,57 @@
 import streamlit as st
-from pages.utility import *
 from pages.db import custom_db
+from pages.utility import *
 
-def init_db():
-    db_name = st.session_state["logged_user_info"]["group_id"]
-    conn = get_db_connection()
-    db = custom_db.CustomDb(conn, db_name)
-    result = db.create_tables()
-    if isSuccess(result):
-        return db
-    if not isSuccess(result):
-        st.cache_resource.clear()
+def init_db() -> object | None:
+    group_id = st.session_state["logged_user_info"]["group_id"]
+    db_obj = custom_db.create_user_info_mongo_connection(group_id)
+    if not isMongoDbObject(db_obj):
+        custom_db.clear_cache()
+        st.error("Error: {0}".format(db_obj))
+        return None
+    return db_obj
+
+def populate_table(db_obj, selected_month, selected_year) -> None:
+    filter = {
+            "date": {
+                "$regex": "{0}-{1}".format(selected_month, selected_year), 
+                "$options": "i"
+                }
+            }
+    result = custom_db.fetch_transaction_records_with_filters(db_obj, filter)
+    if isList(result):
+        if not isEmptyList(result):
+            result = convert_to_df(result)
+            with st.container(height=500, border=False):
+                st.table(result)
+    else:
+        custom_db.clear_cache("Cache_Resource")
         st.error("Error: {0}".format(result))
 
-def show_transactions(db):
+def show_transactions(db_obj):
+    
     st.header("Show Transaction", divider="blue")
+    
     year_list, month_list = get_month_and_year_list()
-    with st.form("show transaction", border=False, enter_to_submit=False):
-        col1, col2 = st.columns(2)
-        with col1:
-            selected_year = st.selectbox("Select a year", year_list)
-        with col2:
-            selected_month = st.selectbox("Select a month", month_list)
-        submitted = st.form_submit_button("Submit")
-        if submitted:
-            selected_month_num = "0{}".format(str(month_list.index(selected_month)+1))
-            result = db.fetch_transaction_records(selected_year,selected_month_num)
-            if isList(result):
-                #print(result)
-                result = convert_to_df(result)
-                st.table(result)
-            else:
-                st.cache_resource.clear()
-                st.error("Error: {0}".format(result))
+       
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        selected_month = st.selectbox("Select a month", month_list)
+    
+    with col2:
+        selected_year = st.selectbox("Select a year", year_list)
+
+    clicked = st.button(
+        label="Submit",
+        key = "show_transaction_button")
+    
+    if clicked:
+        populate_table(db_obj, selected_month, selected_year)
 
 def main():
-    custom_db = init_db()
-    if not isEmptyObject(custom_db):
-        show_transactions(custom_db)
+    db_obj = init_db()
+    if isMongoDbObject(db_obj):
+        show_transactions(db_obj)
 
 main()

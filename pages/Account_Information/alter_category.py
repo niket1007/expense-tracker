@@ -3,50 +3,47 @@ from pages.db import custom_db
 from pages.utility import *
 
 def init_db():
-    #print(st.session_state)
-    db_name = st.session_state["logged_user_info"]["group_id"]
-    conn = get_db_connection()
-    db = custom_db.CustomDb(conn, db_name)
-    result = db.create_tables()
-    if isSuccess(result):
-        return db
-    if not isSuccess(result):
-        st.cache_resource.clear()
-        st.error("Error: {0}".format(result))
+    group_id = st.session_state["logged_user_info"]["group_id"]
+    db_obj = custom_db.create_user_info_mongo_connection(group_id)
+    if not isMongoDbObject(db_obj):
+        custom_db.clear_cache()
+        st.error("Error: {0}".format(db_obj))
+        return None
+    return db_obj
 
-def save_category(category_name, db):
+def save_category(db_obj: object, category_name: str) -> None:
     if not isEmpty(category_name):
-        result = db.insert_category_record({"category_name": category_name})
+        result = custom_db.insert_category_record(
+            db_obj,{"name": category_name})
         if isSuccess(result):
+            custom_db.clear_cache("Cache_Data")
             st.success("Category added successfully")
-            st.cache_resource.clear()
         else:
-            st.cache_resource.clear()
+            custom_db.clear_cache()
             st.error("Error: {0}".format(result))
 
-def crud_category(category_dict, db):
-    with st.form("crud_category", border=False, enter_to_submit=False):
-        category_name = st.text_input("Enter Category Name", placeholder="Category Name", key="category_name")
-        submitted = st.form_submit_button("Save the changes")
-        if submitted:
-            save_category(category_name, db)
-            category_dict = db.fetch_category_records()
-        if not isList(category_dict):
-            st.cache_resource.clear()
-            st.error("Error: {0}".format(category_dict))    
-        elif not isEmptyList(category_dict):
+def show_categories(categories: list) -> None:
+    if not isList(categories):
+        custom_db.clear_cache()
+        st.error("Error: {0}".format(categories))    
+    elif not isEmptyList(categories):
+        with st.container(height=500, border=False):
             st.subheader("Available Categories")
-            st.table(convert_to_df(category_dict))
+            st.table(convert_to_df(categories))
+
+def crud_category(db_obj: object, categories: list) -> None:
+    category_name = st.text_input("Enter Category Name",
+                                    placeholder="Category Name",
+                                    key="category_name")
+    st.button("Save the changes",
+            on_click=save_category, 
+            args=(db_obj, category_name))
+    show_categories(categories)
 
 def main():
-    custom_db = init_db()
-    if not isEmptyObject(custom_db):
-        category_dict = custom_db.fetch_category_records()
-        if not isList(category_dict):
-            st.cache_resource.clear()
-            st.error("Error: {0}".format(category_dict))
-            return
-        
-    crud_category(category_dict, custom_db)
+    db_obj = init_db()
+    if isMongoDbObject(db_obj):    
+        categories = custom_db.fetch_all_categories(db_obj)
+        crud_category(db_obj, categories)
 
 main()

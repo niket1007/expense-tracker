@@ -10,11 +10,16 @@ def logout_func() -> None:
 def show_group_users() -> None:
     group_id = st.session_state["logged_user_info"]["group_id"]
     db_obj = user_info_db.create_user_info_mongo_connection()
-    result = user_info_db.fetch_group_users(db_obj, group_id)
-    if isList(result):
-        st.table(result)
+    if isMongoDbObject(db_obj):
+        result = user_info_db.fetch_group_users(db_obj, group_id)
+        if isList(result):
+            st.table(result)
+        else:
+            user_info_db.cache_clear()
+            st.error("Error: {0}".format(result))
     else:
-        st.error("Error: {0}".format(result))
+        user_info_db.cache_clear()
+        st.error("Error: {0}".format(db_obj))
 
 def main() -> None:
     """
