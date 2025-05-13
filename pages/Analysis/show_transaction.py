@@ -7,7 +7,7 @@ def init_db() -> object | None:
     db_obj = custom_db.create_user_info_mongo_connection(group_id)
     if not isMongoDbObject(db_obj):
         custom_db.clear_cache()
-        st.error("Error: {0}".format(db_obj))
+        st.error("Error: {0}".format(db_obj), icon=":material/error:")
         return None
     return db_obj
 
@@ -18,26 +18,33 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                 "$options": "i"
                 }
             }
-    result = custom_db.fetch_transaction_records_with_filters(db_obj, filter)
-    if isList(result):
-        if not isEmptyList(result):
-            result = convert_to_df(result)
+    results = custom_db.fetch_transaction_records_with_filters(db_obj, filter)
+    if isList(results):
+        if not isEmptyList(results):
+            total = [0, 0]
+            for record in results:
+                if record["type"] == "Income":
+                    total[0] += int(record["amount"])
+                elif record["type"] == "Payment":
+                    total[1] += int(record["amount"])
             with st.container(height=500, border=False):
-                st.table(result)
+                st.badge("Income: {0}".format(total[0]), color="green")
+                st.badge("Expenses: {0}".format(total[1]), color="red")
+                st.table(results)
     else:
         custom_db.clear_cache("Cache_Resource")
-        st.error("Error: {0}".format(result))
+        st.error("Error: {0}".format(results), icon=":material/error:")
 
 def show_transactions(db_obj):
     
-    st.header("Show Transaction", divider="blue")
+    st.header("Show Transaction", divider="blue", anchor=False)
     
-    year_list, month_list = get_month_and_year_list()
+    year_list, month_list, current_month_index = get_month_and_year_list()
        
     col1, col2 = st.columns(2)
     
     with col1:
-        selected_month = st.selectbox("Select a month", month_list)
+        selected_month = st.selectbox("Select a month", month_list, index=current_month_index)
     
     with col2:
         selected_year = st.selectbox("Select a year", year_list)

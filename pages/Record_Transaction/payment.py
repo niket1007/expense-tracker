@@ -7,7 +7,7 @@ def init_db() -> object | None:
     db_obj = custom_db.create_user_info_mongo_connection(group_id)
     if not isMongoDbObject(db_obj):
         custom_db.clear_cache()
-        st.error("Error: {0}".format(db_obj))
+        st.error("Error: {0}".format(db_obj), icon=":material/error:")
         return None
     return db_obj
 
@@ -26,7 +26,7 @@ def save_transaction(db_obj: object, data: dict) -> None:
 def payment_tab(db_obj: object, category_list: list, payment_options: list) -> None:
     with st.form("payment_form", border=False, enter_to_submit=False, clear_on_submit=True):
         
-        st.header("Payment", divider="red")
+        st.header("Payment", divider="red", anchor=False)
         
         amount = st.text_input("Enter the amount",
                                placeholder="Amount",
@@ -48,7 +48,8 @@ def payment_tab(db_obj: object, category_list: list, payment_options: list) -> N
             "type": "Payment",
             "date": transaction_date.strftime("%d-%b-%Y"),
             "payment_from": payment_from,
-            "category": category_option
+            "category": category_option,
+            "spent_by": st.session_state["logged_user_info"]["username"]
         }
         
         submitted = st.form_submit_button("Pay (Add record)")
@@ -56,10 +57,10 @@ def payment_tab(db_obj: object, category_list: list, payment_options: list) -> N
             status = save_transaction(db_obj, data)
             if isSuccess(status):
                 show_payment_app_buttons()
-                st.success("Transaction recorded.")
+                st.success("Transaction recorded.", icon=":material/done_all:")
             else:
                 custom_db.clear_cache("Cache_Resource")
-                st.error("Error: {0}".format(status))
+                st.error("Error: {0}".format(status), icon=":material/error:")
 
 def main() -> None:
     """
@@ -69,7 +70,7 @@ def main() -> None:
     if isMongoDbObject(db_obj):
         payment_options = custom_db.fetch_all_payment_options(db_obj)
         if not isList(payment_options):
-            st.error("Error: {0}".format(payment_options))
+            st.error("Error: {0}".format(payment_options), icon=":material/error:")
             st.cache_resource.clear()
             return
         else:
@@ -77,7 +78,7 @@ def main() -> None:
 
         category_list = custom_db.fetch_all_categories(db_obj)
         if not isList(category_list):
-            st.error("Error: {0}".format(category_list))
+            st.error("Error: {0}".format(category_list), icon=":material/error:")
             st.cache_resource.clear()
             return
         else:

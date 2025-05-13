@@ -7,7 +7,7 @@ def init_db():
     db_obj = custom_db.create_user_info_mongo_connection(group_id)
     if not isMongoDbObject(db_obj):
         custom_db.clear_cache()
-        st.error("Error: {0}".format(db_obj))
+        st.error("Error: {0}".format(db_obj), icon=":material/error:")
         return None
     return db_obj
 
@@ -17,18 +17,18 @@ def save_category(db_obj: object, category_name: str) -> None:
             db_obj,{"name": category_name})
         if isSuccess(result):
             custom_db.clear_cache("Cache_Data")
-            st.success("Category added successfully")
+            st.success("Category added successfully", icon=":material/done_all:")
         else:
             custom_db.clear_cache()
-            st.error("Error: {0}".format(result))
+            st.error("Error: {0}".format(result), icon=":material/error:")
 
 def show_categories(categories: list) -> None:
     if not isList(categories):
         custom_db.clear_cache()
-        st.error("Error: {0}".format(categories))    
+        st.error("Error: {0}".format(categories), icon=":material/error:")    
     elif not isEmptyList(categories):
         with st.container(height=500, border=False):
-            st.subheader("Available Categories")
+            st.subheader("Available Categories", anchor=False)
             st.table(convert_to_df(categories))
 
 def crud_category(db_obj: object, categories: list) -> None:

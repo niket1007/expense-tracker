@@ -1,6 +1,12 @@
 
 import streamlit as st
 
+def log_out():
+    if "isUserLoggedIn" in st.session_state: 
+        st.session_state.clear()
+        st.cache_data.clear()
+        st.cache_resource.clear()
+
 def main():
     if "isUserLoggedIn" not in st.session_state:
         st.session_state["isUserLoggedIn"] = False
@@ -31,10 +37,13 @@ def main():
                 st.Page("pages/Budget/show_budget.py", url_path="show_budget", title="Show Budget", icon=":material/savings:")
             ],
             "Expenditure Analysis": [
-                st.Page("pages/Analysis/expenditure_analysis.py", url_path="expenditure_analysis", title="Expenditure Analysis", icon=":material/monitoring:"),
+                st.Page("pages/Analysis/expenditure_analysis_main.py", url_path="expenditure_analysis", title="Expenditure Analysis", icon=":material/monitoring:"),
                 st.Page("pages/Analysis/show_transaction.py", url_path="show_transactions", title="Show Transaction", icon=":material/receipt_long:")
             ]
         }
+        sidebar = st.sidebar
+        sidebar.button("Log Out", on_click=log_out)
+    
     selected_page = st.navigation(pages_list)
     selected_page.run()
 

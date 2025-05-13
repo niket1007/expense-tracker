@@ -94,11 +94,12 @@ def transaction_data_validator(data: dict):
 
 def get_month_and_year_list():
     current_year = int(date.today().strftime("%Y"))
+    current_month = date.today().strftime("%b")
     year = [str(year) for year in range(current_year, current_year+10)]
     month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"
             , "Aug", "Sep", "Oct", "Nov", "Dec"]
     
-    return [year, month]
+    return [year, month, month.index(current_month)]
 
 def convert_to_json(data):
     """

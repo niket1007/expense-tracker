@@ -7,7 +7,7 @@ def init_db() -> None:
     db_obj = custom_db.create_user_info_mongo_connection(group_id)
     if not isMongoDbObject(db_obj):
         custom_db.clear_cache()
-        st.error("Error: {0}".format(db_obj))
+        st.error("Error: {0}".format(db_obj), icon=":material/error:")
         return None
     return db_obj
 
@@ -16,12 +16,14 @@ def show_budget(db_object: object) -> None:
     Show budget for a particular month
     """
     
-    year, month = get_month_and_year_list()
+    st.header("Show Budget", divider="blue", anchor=False)
+
+    year, month, current_month_index = get_month_and_year_list()
     
     col1, col2 = st.columns(2)
     
     with col1:
-        month = st.selectbox("Select month", month)
+        month = st.selectbox("Select month", month, index=current_month_index)
     
     with col2:
         year = st.selectbox("Select year", year)
@@ -36,7 +38,7 @@ def show_budget(db_object: object) -> None:
         
         if not isList(result):
             st.cache_resource.clear()
-            st.error(result)
+            st.error("Error: {0}".format(result), icon=":material/error:")
         else:
             if not isEmptyList(result):
                 with st.container(height=500, border=False):
@@ -46,7 +48,6 @@ def show_budget(db_object: object) -> None:
 def main():
     db_object = init_db()
     if isMongoDbObject(db_object):
-        st.header("Budget", divider="blue")
         show_budget(db_object)
         
 main()

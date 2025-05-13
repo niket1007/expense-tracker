@@ -3,9 +3,9 @@ from pages.db import user_info_db
 from pages.utility import *
 
 def logout_func() -> None:
-    st.session_state["isUserLoggedIn"] = False
-    st.session_state["logged_user_info"] = {}
     st.session_state.clear()
+    st.cache_data.clear()
+    st.cache_resource.clear()
 
 def show_group_users() -> None:
     group_id = st.session_state["logged_user_info"]["group_id"]
@@ -16,10 +16,10 @@ def show_group_users() -> None:
             st.table(result)
         else:
             user_info_db.cache_clear()
-            st.error("Error: {0}".format(result))
+            st.error("Error: {0}".format(result), icon=":material/error:")
     else:
         user_info_db.cache_clear()
-        st.error("Error: {0}".format(db_obj))
+        st.error("Error: {0}".format(db_obj), icon=":material/error:")
 
 def main() -> None:
     """
