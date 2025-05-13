@@ -26,7 +26,12 @@ def create_user_info_mongo_connection(db_name: str) -> object:
     Create a database connection to a MongoDB database 
     """
     try:
-        client = pymongo.MongoClient(st.secrets["mongodb"]["connection_string"])
+        connection_string = ""
+        if "mongodb" in st.secrets and "connection_string" in st.secrets["mongodb"]:
+            connection_string = st.secrets["mongodb"]["connection_string"]
+        else:
+            connection_string = os.environ["mongo_db_connection_string"]
+        client = pymongo.MongoClient(connection_string)
         db = client[db_name]        
         return db
     except Exception as e:
@@ -104,7 +109,7 @@ def fetch_all_transaction_record(db: object) -> list|str:
         # Fetch all transaction records from collection
         results = transaction_collection.find()
 
-        return [result for result in results]
+        return [] if results is None else [result for result in results]
     except Exception as e:
         return e
 
@@ -119,7 +124,7 @@ def fetch_all_categories(_db: object) -> list|str:
         # Fetch all category records from collection
         results = category_collection.find()
 
-        return [{"category_name": result["name"]} for result in results]
+        return [] if results is None else [{"category_name": result["name"]} for result in results]
     except Exception as e:
         return e
 
@@ -134,7 +139,7 @@ def fetch_all_payment_options(_db: object) -> list|str:
         # Fetch all payment options records from collection
         results = payment_option_collection.find()
 
-        return [{"pay_option_name": result["name"]} for result in results]
+        return [] if results is None else [{"pay_option_name": result["name"]} for result in results]
     except Exception as e:
         return e
 
@@ -150,7 +155,7 @@ def fetch_transaction_records_with_filters(db: object, filters: dict) -> list|st
             filters,
             {"_id": 0})
 
-        return [result for result in results]
+        return [] if results is None else [result for result in results]
     except Exception as e:
         return e
 
@@ -166,6 +171,6 @@ def fetch_budget_record(db: object, filters: dict) -> list|str:
             filters,
             {"_id": 0})
 
-        return [results]
+        return [] if results is None else [results]
     except Exception as e:
         return e

@@ -7,7 +7,7 @@ def init_db():
     db_obj = custom_db.create_user_info_mongo_connection(group_id)
     if not isMongoDbObject(db_obj):
         custom_db.clear_cache()
-        st.error("Error: {0}".format(db_obj))
+        st.error("Error: {0}".format(db_obj), icon=":material/error:")
         return None
     return db_obj
 
@@ -17,18 +17,18 @@ def save_payment_options(db_obj: object, payment_option_name: str) -> None:
             db_obj,{"name": payment_option_name})
         if isSuccess(result):
             custom_db.clear_cache("Cache_Data")
-            st.success("Payment option added successfully")
+            st.success("Payment option added successfully", icon=":material/done_all:")
         else:
             custom_db.clear_cache()
-            st.error("Error: {0}".format(result))
+            st.error("Error: {0}".format(result), icon=":material/error:")
 
 def show_payment_options(payment_options: list) -> None:
     if not isList(payment_options):
         custom_db.clear_cache()
-        st.error("Error: {0}".format(payment_options))    
+        st.error("Error: {0}".format(payment_options), icon=":material/error:")    
     elif not isEmptyList(payment_options):
         with st.container(height=500, border=False):
-            st.subheader("Available payment_options")
+            st.subheader("Available payment_options", anchor=False)
             st.table(convert_to_df(payment_options))
 
 def crud_payment_options(db_obj: object, payment_options: list) -> None:

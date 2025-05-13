@@ -18,7 +18,13 @@ def _get_config(key1: str, key2: str) -> str:
 def create_user_info_mongo_connection() -> object:
     """ Create a database connection to a MongoDB database """
     try:
-        client = pymongo.MongoClient(st.secrets["mongodb"]["connection_string"])
+        connection_string = ""
+        if "mongodb" in st.secrets and "connection_string" in st.secrets["mongodb"]:
+            connection_string = st.secrets["mongodb"]["connection_string"]
+        else:
+            print(os.environ)
+            connection_string = os.environ["mongo_db_connection_string"]
+        client = pymongo.MongoClient(connection_string)
         db = client[_get_config('user_info', 'database_name')]        
         return db
     except Exception as e:
