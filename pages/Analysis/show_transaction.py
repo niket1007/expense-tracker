@@ -21,15 +21,34 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
     results = custom_db.fetch_transaction_records_with_filters(db_obj, filter)
     if isList(results):
         if not isEmptyList(results):
-            total = [0, 0]
+            total_balance = {}
             for record in results:
                 if record["type"] == "Income":
-                    total[0] += int(record["amount"])
+                    if record["payment_to"] in total_balance:
+                        total_balance[record["payment_to"]] += int(record["amount"])
+                    else:
+                        total_balance[record["payment_to"]] = int(record["amount"])
                 elif record["type"] == "Payment":
-                    total[1] += int(record["amount"])
+                    if record["payment_from"] in total_balance:
+                        total_balance[record["payment_from"]] -= int(record["amount"])
+                    else:
+                        total_balance[record["payment_from"]] = -int(record["amount"])
+                elif record["type"] == "Transfer":
+                    if record["payment_from"] in total_balance:
+                        total_balance[record["payment_from"]] -= int(record["amount"])
+                    else:
+                        total_balance[record["payment_from"]] = -int(record["amount"])
+                    if record["payment_to"] in total_balance:
+                        total_balance[record["payment_to"]] += int(record["amount"])
+                    else:
+                        total_balance[record["payment_to"]] = int(record["amount"])
+
             with st.container(height=500, border=False):
-                st.badge("Income: {0}".format(total[0]), color="green")
-                st.badge("Expenses: {0}".format(total[1]), color="red")
+                for payment_option in total_balance:
+                    amount = total_balance[payment_option]
+                    st.badge(
+                        "{0}: {1}".format(payment_option, amount), 
+                        color="green" if amount > 0 else "red")
                 st.table(results)
     else:
         custom_db.clear_cache("Cache_Resource")
