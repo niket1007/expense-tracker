@@ -22,17 +22,25 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
     if isList(results):
         if not isEmptyList(results):
             total_balance = {}
+            transaction_records = {"Income": [], "Payment": [], "Transfer": []}
+
             for record in results:
                 if record["type"] == "Income":
                     if record["payment_to"] in total_balance:
                         total_balance[record["payment_to"]] += int(record["amount"])
                     else:
                         total_balance[record["payment_to"]] = int(record["amount"])
+                    
+                    transaction_records["Income"].append(record)
+
                 elif record["type"] == "Payment":
                     if record["payment_from"] in total_balance:
                         total_balance[record["payment_from"]] -= int(record["amount"])
                     else:
                         total_balance[record["payment_from"]] = -int(record["amount"])
+                    
+                    transaction_records["Payment"].append(record)
+
                 elif record["type"] == "Transfer":
                     if record["payment_from"] in total_balance:
                         total_balance[record["payment_from"]] -= int(record["amount"])
@@ -41,15 +49,31 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                     if record["payment_to"] in total_balance:
                         total_balance[record["payment_to"]] += int(record["amount"])
                     else:
-                        total_balance[record["payment_to"]] = int(record["amount"])
+                        total_balance[record["payment_to"]] = int(record["amount"]) 
+                    
+                    transaction_records["Transfer"].append(record)
 
-            with st.container(height=500, border=False):
+            with st.container(height=200, border=False):
                 for payment_option in total_balance:
                     amount = total_balance[payment_option]
                     st.badge(
                         "{0}: {1}".format(payment_option, amount), 
                         color="green" if amount > 0 else "red")
-                st.table(results)
+
+            if not isEmptyList(transaction_records["Payment"]):
+                with st.expander("Show all the Expense records", icon=":material/currency_rupee:"):
+                    with st.container(height=300, border=False):
+                        st.table(transaction_records["Payment"])
+
+            if not isEmptyList(transaction_records["Income"]):
+                with st.expander("Show all the Income records", icon=":material/money_bag:"):
+                    with st.container(height=300, border=False):
+                        st.table(transaction_records["Income"])
+            
+            if not isEmptyList(transaction_records["Transfer"]):
+                with st.expander("Show all the Transfer records", icon=":material/swap_horiz:"):
+                    with st.container(height=300, border=False):
+                        st.table(transaction_records["Transfer"])
     else:
         custom_db.clear_cache("Cache_Resource")
         st.error("Error: {0}".format(results), icon=":material/error:")
