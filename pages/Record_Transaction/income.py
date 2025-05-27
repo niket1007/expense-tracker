@@ -19,7 +19,7 @@ def save_transaction(db_object: object, data: dict) -> None:
         custom_db.clear_cache("Cache_Resource")
         st.error("Error: {0}".format(result), icon=":material/error:")
 
-def income_tab(db_object: object, category_list: list, payment_options: list) -> None:
+def income_tab(db_object: object, payment_options: list) -> None:
     with st.form("income_form", border=False, enter_to_submit=False, clear_on_submit=True):
         
         st.header("Income", divider="blue", anchor=False)
@@ -32,10 +32,6 @@ def income_tab(db_object: object, category_list: list, payment_options: list) ->
                                         value="today",
                                         key="income_date")
         
-        category_option = st.selectbox("Select a category",
-                                       category_list,
-                                       key="credit_category")
-        
         payment_to = st.selectbox("Amount added to",
                                   payment_options,
                                   key="credit_option")
@@ -45,7 +41,6 @@ def income_tab(db_object: object, category_list: list, payment_options: list) ->
             "type": "Income",
             "date":transaction_date.strftime("%d-%b-%Y"),
             "payment_to": payment_to,
-            "category": category_option,
             "spent_by": st.session_state["logged_user_info"]["username"]
         }
         
@@ -70,15 +65,7 @@ def main() -> None:
             custom_db.clear_cache()
             return
         else:
-            payment_options = [i["pay_option_name"] for i in payment_options]
-
-        category_list = custom_db.fetch_all_categories(db_object)
-        if not isList(category_list):
-            st.error("Error: {0}".format(category_list), icon=":material/error:")
-            custom_db.clear_cache()
-            return
-        else:
-            category_list = [i["category_name"] for i in category_list]        
-            income_tab(db_object, category_list, payment_options)
+            payment_options = [i["pay_option_name"] for i in payment_options]     
+            income_tab(db_object, payment_options)
 
 main()
