@@ -32,10 +32,6 @@ def main():
                 st.Page("pages/Record_Transaction/income.py", url_path="income", title="Income", icon=":material/money_bag:"),
                 st.Page("pages/Record_Transaction/transfer.py", url_path="transfer", title="Transfer", icon=":material/swap_horiz:")
             ],
-            "Budget": [
-                st.Page("pages/Budget/create_budget.py", url_path="create_budget", title="Create Budget", icon=":material/savings:"),
-                st.Page("pages/Budget/show_budget.py", url_path="show_budget", title="Show Budget", icon=":material/savings:")
-            ],
             "Expenditure Analysis": [
                 st.Page("pages/Analysis/expenditure_analysis_main.py", url_path="expenditure_analysis", title="Expenditure Analysis", icon=":material/monitoring:"),
                 st.Page("pages/Analysis/show_transaction.py", url_path="show_transactions", title="Show Transaction", icon=":material/receipt_long:")

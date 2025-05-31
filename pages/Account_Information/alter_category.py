@@ -29,7 +29,7 @@ def show_categories(categories: list) -> None:
     elif not isEmptyList(categories):
         with st.container(height=500, border=False):
             st.subheader("Available Categories", anchor=False)
-            st.table(convert_to_df(categories))
+            st.dataframe(convert_to_df(categories))
 
 def crud_category(db_obj: object, categories: list) -> None:
     category_name = st.text_input("Enter Category Name",

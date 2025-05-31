@@ -2,7 +2,6 @@ import streamlit as st
 from pages.utility import *
 from pages.Analysis.per_user_spent import main as per_user_spent_main
 from pages.Analysis.category_wise_spent import main as category_wise_spent_main
-from pages.Analysis.budget_vs_actual import main as budget_vs_actual_spent_main
 from pages.db import custom_db
 
 
@@ -44,10 +43,6 @@ def expenditure_analysis(db_obj: object) -> None:
         # Show Category Expenses
         with st.expander("Category wise expenses"):
             category_wise_spent_main(db_obj, custom_db, data)
-        
-        # Compare budget with actual expenses
-        with st.expander("Budget vs Actual Expenses"):
-            budget_vs_actual_spent_main(db_obj, custom_db, data)
 
 
 def main():
