@@ -162,7 +162,10 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                         df.drop(["type", "_id"], axis='columns', inplace=True)
                         st.dataframe(df,
                                     height=300,
+                                    hide_index=True,
+                                    column_order=["date", "amount", "category", "payment_from", "spent_by"],
                                     key="payment_data",
+                                    selection_mode="single-row",
                                     on_select=lambda : show_data(db_obj,
                                                                 transaction_records["Payment"],
                                                                 "payment_data"))
@@ -174,7 +177,10 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                         df.drop(["type", "_id"], axis='columns', inplace=True)
                         st.dataframe(df,
                                     height=300,
+                                    hide_index=True,
+                                    column_order=["date", "amount", "payment_to", "spent_by"],
                                     key="income_data",
+                                    selection_mode="single-row",
                                     on_select=lambda : show_data(db_obj,
                                                                 transaction_records["Income"],
                                                                 "income_data"))
@@ -186,7 +192,10 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                         df.drop(["type", "_id"], axis='columns', inplace=True)
                         st.dataframe(df,
                                     height=300,
+                                    hide_index=True,
+                                    column_order=["date", "amount", "payment_from", "payment_to", "spent_by"],
                                     key="transfer_data",
+                                    selection_mode="single-row",
                                     on_select=lambda : show_data(db_obj,
                                                                 transaction_records["Transfer"],
                                                                 "transfer_data"))

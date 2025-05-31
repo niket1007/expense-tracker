@@ -1,6 +1,5 @@
 import pandas as pd
 from datetime import date, datetime
-import json
 import pymongo
 
 
@@ -91,13 +90,6 @@ def get_month_and_year_list():
             , "Aug", "Sep", "Oct", "Nov", "Dec"]
     
     return [year, month, month.index(current_month)]
-
-def convert_to_json(data):
-    """
-    Convert stringified json to dictionary
-    """
-    if not isEmpty(data):
-        return json.loads(data)
 
 def convert_date_to_str(data):
     return date.strftime(data, "%d-%b-%Y")

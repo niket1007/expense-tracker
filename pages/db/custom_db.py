@@ -83,22 +83,6 @@ def insert_payment_option_record(db: object, data: dict) -> str:
         except Exception as e:
             return e
 
-def insert_budget_record(db: object, data: dict) -> str:
-    """
-    Insert budget record
-    """
-    try:
-        budget_collection = db[_get_config("custom_db_info", "budget_collection")]
-
-        # Update if existing record otherwise create a new one
-        filter = {"year": data["year"], "month": data["month"]}
-        value = {"$set": data}
-        budget_collection.update_one(filter, value, True)
-
-        return "Success"
-    except Exception as e:
-        return e
-
 def fetch_all_transaction_record(db: object) -> list|str:
     """
     Fetch all transaction records
@@ -159,22 +143,6 @@ def fetch_transaction_records_with_filters(db: object, filters: dict, keys: dict
             keys)
 
         return [] if results is None else [result for result in results]
-    except Exception as e:
-        return e
-
-def fetch_budget_record(db: object, filters: dict) -> list|str:
-    """
-    Fetch transaction records on basis of filters
-    """
-    try:
-        budget_collection = db[_get_config("custom_db_info", "budget_collection")]
-        
-        # Fetch all transaction records from collection
-        results = budget_collection.find_one(
-            filters,
-            {"_id": 0})
-
-        return [] if results is None else [results]
     except Exception as e:
         return e
 
