@@ -28,7 +28,7 @@ def main():
                 st.Page("pages/Account_Information/alter_payment_options.py", url_path="payment_options", title="Payment Options", icon=":material/add_card:")
             ],
             "Record Transaction": [
-                st.Page("pages/Record_Transaction/payment.py", url_path="payment", title="Payment", icon=":material/currency_rupee:"),
+                st.Page("pages/Record_Transaction/payment.py", url_path="payment", title="Payment", icon=":material/currency_rupee:", default=True),
                 st.Page("pages/Record_Transaction/income.py", url_path="income", title="Income", icon=":material/money_bag:"),
                 st.Page("pages/Record_Transaction/transfer.py", url_path="transfer", title="Transfer", icon=":material/swap_horiz:")
             ],
