@@ -68,14 +68,18 @@ def transaction_data_validator(data: dict):
         if key == "date" or key == "_id":
             if data[key] is None:
                 valid = "Provide value for {0}".format(key)
-                break  
+                return valid  
         elif isEmpty(data[key]):
             valid = "Provide value for {0}".format(key)
-            break
+            return valid 
 
         if key == "amount" and not data[key].isnumeric():
             valid = "Amount field can have only numeric values."
-            break
+            return valid 
+    
+    if data["type"] == "Transfer" and data["payment_from"] == data["payment_to"]:
+        valid = "Transfer from and to payment option cannot be same"
+        return valid
 
     return valid
 
