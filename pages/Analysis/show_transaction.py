@@ -17,6 +17,7 @@ def transform_data() -> dict:
     if st.session_state["type"] == "Payment": 
         data = {
             "_id": st.session_state["_id"],
+            "type": st.session_state["type"],
             "amount": st.session_state["record_amount"],
             "date": convert_date_to_str(st.session_state["record_date"]),
             "payment_from": st.session_state["record_payment_from"],
@@ -25,6 +26,7 @@ def transform_data() -> dict:
     elif st.session_state["type"] == "Income":
         data = {
             "_id": st.session_state["_id"],
+            "type": st.session_state["type"],
             "amount": st.session_state["record_amount"],
             "date": convert_date_to_str(st.session_state["record_date"]),
             "payment_to": st.session_state["record_payment_to"],
@@ -32,6 +34,7 @@ def transform_data() -> dict:
     else:
         data = {
             "_id": st.session_state["_id"],
+            "type": st.session_state["type"],
             "amount": st.session_state["record_amount"],
             "date": convert_date_to_str(st.session_state["record_date"]),
             "payment_from": st.session_state["record_payment_from"],
