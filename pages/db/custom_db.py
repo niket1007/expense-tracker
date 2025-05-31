@@ -143,17 +143,20 @@ def fetch_all_payment_options(_db: object) -> list|str:
     except Exception as e:
         return e
 
-def fetch_transaction_records_with_filters(db: object, filters: dict) -> list|str:
+def fetch_transaction_records_with_filters(db: object, filters: dict, keys: dict = None) -> list|str:
     """
     Fetch transaction records on basis of filters
     """
     try:
         transaction_collection = db[_get_config("custom_db_info", "transaction_collection")]
         
+        if keys is None:
+            keys = {"_id": 0}
+
         # Fetch all transaction records from collection
         results = transaction_collection.find(
             filters,
-            {"_id": 0})
+            keys)
 
         return [] if results is None else [result for result in results]
     except Exception as e:
@@ -172,5 +175,36 @@ def fetch_budget_record(db: object, filters: dict) -> list|str:
             {"_id": 0})
 
         return [] if results is None else [results]
+    except Exception as e:
+        return e
+
+def update_transaction_record(db: object, data: dict) -> str:
+    """
+    Update transaction record
+    """
+    try:
+        transaction_collection = db[_get_config("custom_db_info", "transaction_collection")]
+
+        # Update existing record
+        filter = {"_id": data["_id"]}
+        value = {"$set": data}
+        transaction_collection.update_one(filter, value, True)
+
+        return "Success"
+    except Exception as e:
+        return e
+
+def delete_transaction_record(db: object, id: object) -> str:
+    """
+    Delete transaction record
+    """
+    try:
+        transaction_collection = db[_get_config("custom_db_info", "transaction_collection")]
+
+        # Update existing record
+        query = {"_id": id}
+        transaction_collection.delete_one(query)
+
+        return "Success"
     except Exception as e:
         return e

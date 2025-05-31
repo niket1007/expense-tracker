@@ -39,7 +39,7 @@ def create_budget(db_object: object) -> None:
                 for category in category_list:
                     category["budget"] = 0
                 
-                changed_df = st.data_editor(convert_to_df(category_list))
+                changed_df = st.dataframe(convert_to_df(category_list), on_select="ignore")
                 
                 submitted = st.form_submit_button("Create")
                 

@@ -18,9 +18,7 @@ def show_payment_app_buttons() -> None:
     st.link_button("Google Pay", "intent://upi#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;end;")
         
 def save_transaction(db_obj: object, data: dict) -> None:
-    result = transaction_data_validator(data)
-    if isSuccess(result):
-        result = custom_db.insert_transaction_record(db_obj, data)
+    result = custom_db.insert_transaction_record(db_obj, data)
     return result
 
 def payment_tab(db_obj: object, category_list: list, payment_options: list) -> None:
@@ -46,7 +44,7 @@ def payment_tab(db_obj: object, category_list: list, payment_options: list) -> N
         data = {
             "amount": amount,
             "type": "Payment",
-            "date": transaction_date.strftime("%d-%b-%Y"),
+            "date": convert_date_to_str(transaction_date),
             "payment_from": payment_from,
             "category": category_option,
             "spent_by": st.session_state["logged_user_info"]["username"]
@@ -54,12 +52,16 @@ def payment_tab(db_obj: object, category_list: list, payment_options: list) -> N
         
         submitted = st.form_submit_button("Pay (Add record)")
         if submitted:
-            status = save_transaction(db_obj, data)
+            status = transaction_data_validator(data)
             if isSuccess(status):
-                show_payment_app_buttons()
-                st.success("Transaction recorded.", icon=":material/done_all:")
+                status = save_transaction(db_obj, data)
+                if isSuccess(status):
+                    show_payment_app_buttons()
+                    st.success("Transaction recorded.", icon=":material/done_all:")
+                else:
+                    custom_db.clear_cache("Cache_Resource")
+                    st.error("Error: {0}".format(status), icon=":material/error:")
             else:
-                custom_db.clear_cache("Cache_Resource")
                 st.error("Error: {0}".format(status), icon=":material/error:")
 
 def main() -> None:

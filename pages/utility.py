@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import date
+from datetime import date, datetime
 import json
 import pymongo
 
@@ -64,31 +64,18 @@ def convert_to_df(data: dict) -> object:
 def transaction_data_validator(data: dict):
     valid = "Success"
 
-    # Type Validation
-    if data["type"] == "Income":
-        for key in data:
-            if key != "payment_from" and isEmpty(data[key]):
+    for key in data:
+        if key == "date" or key == "_id":
+            if data[key] is None:
                 valid = "Provide value for {0}".format(key)
-                return valid
-    elif data["type"] == "Payment":
-        for key in data:
-            if key != "payment_to" and isEmpty(data[key]):
-                valid = "Provide value for {0}".format(key)
-                return valid
+                break  
+        elif isEmpty(data[key]):
+            valid = "Provide value for {0}".format(key)
+            break
 
-    elif data["type"] == "Transfer":
-        for key in data:
-            if key != "category" and isEmpty(data[key]):
-                valid = "Provide value for {0}".format(key)
-                return valid        
-        if data["payment_from"] == data["payment_to"]:
-            valid = "Transfer from and to option cannot be same."
-            return valid
-
-    # Field Validation
-    if not data["amount"].isnumeric():
-        valid = "Amount field can have only numeric values."
-        return valid
+        if key == "amount" and not data[key].isnumeric():
+            valid = "Amount field can have only numeric values."
+            break
 
     return valid
 
@@ -107,5 +94,17 @@ def convert_to_json(data):
     """
     if not isEmpty(data):
         return json.loads(data)
+
+def convert_date_to_str(data):
+    return date.strftime(data, "%d-%b-%Y")
+
+def convert_str_to_date(data):
+    return datetime.strptime(data, "%d-%b-%Y")
+
+def get_index(elements, find_element):
+    try:
+        return elements.index(find_element)
+    except ValueError as e:
+        return None
 
 # ------------------------------Utility Function End
