@@ -20,7 +20,7 @@ def transfer_tab(db_obj: object, payment_options: list) -> None:
         
         st.header("Transfer", divider="orange", anchor=False)
         
-        amount = st.text_input("Enter the amount",
+        amount = st.number_input("Enter the amount",
                                placeholder="Amount", 
                                key="transfer_amount") 
         

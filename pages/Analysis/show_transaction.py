@@ -70,7 +70,7 @@ def show_data(db_obj: object, data: dict, key: str) -> None:
         #Update form
         with st.form("Update/Delete", enter_to_submit=False, border=False):
             if "amount" in row_data:
-                st.text_input("Amount",
+                st.number_input("Amount",
                               value = row_data["amount"],
                               key="record_amount")
 
@@ -120,40 +120,47 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
             transaction_records = {"Income": [], "Payment": [], "Transfer": []}
 
             for record in results:
+                record["amount"] = float(record["amount"])
                 if record["type"] == "Income":
                     if record["payment_to"] in total_balance:
-                        total_balance[record["payment_to"]] += int(record["amount"])
+                        total_balance[record["payment_to"]] += record["amount"]
                     else:
-                        total_balance[record["payment_to"]] = int(record["amount"])
+                        total_balance[record["payment_to"]] = record["amount"]
                     
                     transaction_records["Income"].append(record)
 
                 elif record["type"] == "Payment":
                     if record["payment_from"] in total_balance:
-                        total_balance[record["payment_from"]] -= int(record["amount"])
+                        total_balance[record["payment_from"]] -= record["amount"]
                     else:
-                        total_balance[record["payment_from"]] = -int(record["amount"])
+                        total_balance[record["payment_from"]] = -record["amount"]
                     
                     transaction_records["Payment"].append(record)
 
                 elif record["type"] == "Transfer":
                     if record["payment_from"] in total_balance:
-                        total_balance[record["payment_from"]] -= int(record["amount"])
+                        total_balance[record["payment_from"]] -= record["amount"]
                     else:
-                        total_balance[record["payment_from"]] = -int(record["amount"])
+                        total_balance[record["payment_from"]] = -record["amount"]
                     if record["payment_to"] in total_balance:
-                        total_balance[record["payment_to"]] += int(record["amount"])
+                        total_balance[record["payment_to"]] += record["amount"]
                     else:
-                        total_balance[record["payment_to"]] = int(record["amount"]) 
+                        total_balance[record["payment_to"]] = record["amount"]
                     
                     transaction_records["Transfer"].append(record)
 
+            amount_column_config = {
+                                        "amount": st.column_config.NumberColumn(
+                                            "amount",
+                                            format="₹%.2f"
+                                        )
+                                    }
             with st.container(height=200, border=False):
                 for payment_option in total_balance:
                     amount = total_balance[payment_option]
-                    st.badge(
-                        "{0}: {1}".format(payment_option, amount), 
-                        color="green" if amount > 0 else "red")
+                    content = "**{0} ₹{1:.2f}**".format(payment_option, amount)
+                    content_box = ":green-badge[{}]" if amount > 0 else ":red-badge[{}]"
+                    st.markdown(content_box.format(content))
 
             if not isEmptyList(transaction_records["Payment"]):
                 with st.expander("Show all the Expense records", icon=":material/currency_rupee:"):
@@ -165,6 +172,7 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                                     hide_index=True,
                                     column_order=["date", "amount", "category", "payment_from", "spent_by"],
                                     key="payment_data",
+                                    column_config=amount_column_config,
                                     selection_mode="single-row",
                                     on_select=lambda : show_data(db_obj,
                                                                 transaction_records["Payment"],
@@ -180,6 +188,7 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                                     hide_index=True,
                                     column_order=["date", "amount", "payment_to", "spent_by"],
                                     key="income_data",
+                                    column_config=amount_column_config,
                                     selection_mode="single-row",
                                     on_select=lambda : show_data(db_obj,
                                                                 transaction_records["Income"],
@@ -195,6 +204,7 @@ def populate_table(db_obj, selected_month, selected_year) -> None:
                                     hide_index=True,
                                     column_order=["date", "amount", "payment_from", "payment_to", "spent_by"],
                                     key="transfer_data",
+                                    column_config=amount_column_config,
                                     selection_mode="single-row",
                                     on_select=lambda : show_data(db_obj,
                                                                 transaction_records["Transfer"],

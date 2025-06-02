@@ -26,7 +26,7 @@ def payment_tab(db_obj: object, category_list: list, payment_options: list) -> N
         
         st.header("Payment", divider="red", anchor=False)
         
-        amount = st.text_input("Enter the amount",
+        amount = st.number_input("Enter the amount",
                                placeholder="Amount",
                                key="payment_amount") 
         

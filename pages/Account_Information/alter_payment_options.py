@@ -12,7 +12,7 @@ def init_db():
     return db_obj
 
 def save_payment_options(db_obj: object, payment_option_name: str) -> None:
-    if not isEmpty(payment_option_name):
+    if not isEmptyString(payment_option_name):
         result = custom_db.insert_payment_option_record(
             db_obj,{"name": payment_option_name})
         if isSuccess(result):

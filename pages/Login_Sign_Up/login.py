@@ -12,7 +12,7 @@ def init_db():
     return db_obj
 
 def login_func(db_obj: object, data: dict) -> None:
-    if isEmpty(data["username"]) or isEmpty(data["password"]):
+    if isEmptyString(data["username"]) or isEmptyString(data["password"]):
         st.error("Please enter your username and password", icon=":material/error:")
     else: 
         result = user_info_db.fetch_user(db_obj, data)

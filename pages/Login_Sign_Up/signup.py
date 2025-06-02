@@ -13,10 +13,10 @@ def init_db():
     return db_obj
 
 def sign_up_func(db_obj: object, data: dict) -> None:
-    if isEmpty(data["username"]) or isEmpty(data["password"]):
+    if isEmptyString(data["username"]) or isEmptyString(data["password"]):
         st.error("Please enter your username and password", icon=":material/error:")
     else: 
-        if isEmpty(data["group_id"]):
+        if isEmptyString(data["group_id"]):
             data["group_id"] = str(uuid.uuid4())
         
         result = user_info_db.insert_user(db_obj, data)
