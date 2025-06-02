@@ -12,7 +12,7 @@ def init_db():
     return db_obj
 
 def save_category(db_obj: object, category_name: str) -> None:
-    if not isEmpty(category_name):
+    if not isEmptyString(category_name):
         result = custom_db.insert_category_record(
             db_obj,{"name": category_name})
         if isSuccess(result):

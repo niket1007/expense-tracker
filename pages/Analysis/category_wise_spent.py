@@ -21,7 +21,7 @@ def main(db_obj: object, custom_db: object, data: object):
             per_category_spent = {}
             total_amount = 0
             for record in transaction_records:
-                amount = int(record["amount"])
+                amount = float(record["amount"])
                 category = record["category"]
                 if category in per_category_spent:
                     per_category_spent[category] += amount
@@ -31,16 +31,18 @@ def main(db_obj: object, custom_db: object, data: object):
             
             with st.container(height=300, border=False):
                 st.subheader("1) Category wise spending", divider="orange", anchor=False)
-                st.table(per_category_spent)
+                st.data_editor(per_category_spent,
+                               disabled=True,
+                               use_container_width=True,
+                               column_config={
+                                   "value": st.column_config.NumberColumn(
+                                            "value",
+                                            format="₹%.2f"
+                                        )
+                               })
                 
                 # Pie Chart
-                pie_values = []
-                for key in per_category_spent:
-                    pie_values.append({
-                        "category": key,
-                        "amount": per_category_spent[key]
-                    })
-                df = convert_to_df(pie_values)
+                df = convert_to_df(per_category_spent, ["category", "amount"])
                 fig = px.pie(
                             data_frame=df, 
                             values='amount',

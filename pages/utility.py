@@ -4,13 +4,12 @@ import pymongo
 
 
 # ------------------------------Utility Function Start
-def isEmpty(value:str) -> bool:
+def isEmptyString(value:str) -> bool:
     """
     Check if a string is empty or contains only whitespace characters.
     """
-    if type(value) == str:
-        return value is None or value.strip() == ""
-    raise TypeError("Value must be a string")
+    return value is None or value.strip() == ""
+    
 
 def isEmptyObject(value:object) -> bool:
     """
@@ -54,26 +53,27 @@ def isMongoDbObject(value: object):
     """
     return isinstance(value, pymongo.synchronous.database.Database)
 
-def convert_to_df(data: dict) -> object:
+def convert_to_df(data: dict | list, columns: list = None) -> object:
     """
     Convert a dict to a DataFrame.
     """
+    if not isEmptyList(columns):
+        return pd.DataFrame(data.items(), columns=columns)
     return pd.DataFrame(data)
+    
 
 def transaction_data_validator(data: dict):
     valid = "Success"
 
     for key in data:
-        if key == "date" or key == "_id":
+        if key == "_id":
             if data[key] is None:
                 valid = "Provide value for {0}".format(key)
                 return valid  
-        elif isEmpty(data[key]):
+        elif key == "amount":
+            continue
+        elif isEmptyString(data[key]):
             valid = "Provide value for {0}".format(key)
-            return valid 
-
-        if key == "amount" and not data[key].isnumeric():
-            valid = "Amount field can have only numeric values."
             return valid 
     
     if data["type"] == "Transfer" and data["payment_from"] == data["payment_to"]:
