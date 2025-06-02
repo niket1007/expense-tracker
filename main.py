@@ -1,19 +1,23 @@
 
 import streamlit as st
+from streamlit_local_storage import LocalStorage
 
 def log_out():
-    if "isUserLoggedIn" in st.session_state: 
-        st.session_state.clear()
-        st.cache_data.clear()
-        st.cache_resource.clear()
+    st.session_state.local_storage.deleteAll()
+    st.session_state.clear()
+    st.cache_data.clear()
+    st.cache_resource.clear()
 
 def main():
-    if "isUserLoggedIn" not in st.session_state:
-        st.session_state["isUserLoggedIn"] = False
-    if "logged_user_info" not in st.session_state:
-        st.session_state["logged_user_info"] = {}
-    
-    if not st.session_state["isUserLoggedIn"]:
+
+    if "localstorage" not in st.session_state:
+        st.session_state.local_storage = LocalStorage()
+
+    isUserLoggedIn = False
+    if st.session_state.local_storage.getItem("isUserLoggedIn") is not None:
+        isUserLoggedIn = True
+
+    if not isUserLoggedIn:
         pages_list = {
             "Login/Sign Up": [
                 st.Page("pages/Login_Sign_Up/login.py", title="Login", icon=":material/login:"),

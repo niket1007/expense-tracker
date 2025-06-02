@@ -102,5 +102,11 @@ def get_index(elements, find_element):
         return elements.index(find_element)
     except ValueError as e:
         return None
+    
+def get_username(local):
+    return local.getItem("isUserLoggedIn").split(":")[0]
+
+def get_group_id(local):
+    return local.getItem("isUserLoggedIn").split(":")[1]
 
 # ------------------------------Utility Function End

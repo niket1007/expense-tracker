@@ -21,8 +21,9 @@ def login_func(db_obj: object, data: dict) -> None:
                 user_info_db.cache_clear()
             st.error("Error: {0}".format(result), icon=":material/error:")
             return
-        st.session_state["isUserLoggedIn"] = True
-        st.session_state["logged_user_info"] = result[0]
+
+        local_storage_data = "{0}:{1}".format(result[0]["username"], result[0]["group_id"])
+        st.session_state.local_storage.setItem("isUserLoggedIn", local_storage_data)=
 
 def main():
     """
