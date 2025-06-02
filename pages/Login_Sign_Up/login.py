@@ -23,7 +23,7 @@ def login_func(db_obj: object, data: dict) -> None:
             return
 
         local_storage_data = "{0}:{1}".format(result[0]["username"], result[0]["group_id"])
-        st.session_state.local_storage.setItem("isUserLoggedIn", local_storage_data)=
+        st.session_state.local_storage.setItem("isUserLoggedIn", local_storage_data)
 
 def main():
     """
