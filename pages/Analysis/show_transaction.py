@@ -3,7 +3,7 @@ from pages.db import custom_db
 from pages.utility import *
 
 def init_db() -> object | None:
-    group_id = st.session_state["logged_user_info"]["group_id"]
+    group_id = get_group_id(st.session_state.local_storage)
     db_obj = custom_db.create_user_info_mongo_connection(group_id)
     if not isMongoDbObject(db_obj):
         custom_db.clear_cache()
@@ -12,7 +12,6 @@ def init_db() -> object | None:
     return db_obj
 
 def transform_data() -> dict:
-    print("reahced here")
     data = None
     if st.session_state["type"] == "Payment": 
         data = {

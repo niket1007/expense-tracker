@@ -8,7 +8,7 @@ def logout_func() -> None:
     st.cache_resource.clear()
 
 def show_group_users() -> None:
-    group_id = st.session_state["logged_user_info"]["group_id"]
+    group_id = get_group_id(st.session_state.local_storage)
     db_obj = user_info_db.create_user_info_mongo_connection()
     if isMongoDbObject(db_obj):
         result = user_info_db.fetch_group_users(db_obj, group_id)
@@ -25,10 +25,9 @@ def main() -> None:
     """
     User Information Page
     """
-    #print(st.session_state)
-    st.title("Welcome {0}".format(st.session_state["logged_user_info"]["username"]))
+    st.title("Welcome {0}".format(get_username(st.session_state.local_storage)))
 
-    st.markdown("Group Id: **{0}**".format(st.session_state["logged_user_info"]["group_id"]))
+    st.markdown("Group Id: **{0}**".format(get_group_id(st.session_state.local_storage)))
     st.markdown(":blue[This is your group id. Share this with your friends to add them to your group.]")
     show_group_users()
     st.button("Logout", on_click=logout_func, key="logout_button")

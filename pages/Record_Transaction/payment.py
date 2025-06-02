@@ -3,7 +3,8 @@ from pages.db import custom_db
 from pages.utility import *
 
 def init_db() -> object | None:
-    group_id = st.session_state["logged_user_info"]["group_id"]
+    # group_id = get_group_id(st.session_state.local_storage)
+    group_id = get_group_id(st.session_state.local_storage)
     db_obj = custom_db.create_user_info_mongo_connection(group_id)
     if not isMongoDbObject(db_obj):
         custom_db.clear_cache()
@@ -47,7 +48,7 @@ def payment_tab(db_obj: object, category_list: list, payment_options: list) -> N
             "date": convert_date_to_str(transaction_date),
             "payment_from": payment_from,
             "category": category_option,
-            "spent_by": st.session_state["logged_user_info"]["username"]
+            "spent_by": get_username(st.session_state.local_storage)
         }
         
         submitted = st.form_submit_button("Pay (Add record)")
