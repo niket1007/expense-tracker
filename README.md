@@ -93,6 +93,56 @@ streamlit run app.py
 
 ## 📊 Database Structure
 
+### Database Architecture Overview
+The application uses a scalable MongoDB architecture with a main database for user management and separate databases for each expense group.
+
+```mermaid
+graph TD
+    A[MongoDB Instance] --> B[Main Database]
+    A --> C[Group Database 1<br/>group_id_123]
+    A --> D[Group Database 2<br/>group_id_456]
+    A --> E[Group Database N<br/>group_id_xxx]
+    
+    B --> F[login Collection]
+    B --> G[group_user Collection]
+    
+    F --> F1[username: string<br/>password: string]
+    G --> G1[group_id: string<br/>username: string]
+    
+    C --> H[categories Collection]
+    C --> I[payment_options Collection]
+    C --> J[transaction_records Collection]
+    
+    D --> K[categories Collection]
+    D --> L[payment_options Collection]
+    D --> M[transaction_records Collection]
+    
+    E --> N[categories Collection]
+    E --> O[payment_options Collection]
+    E --> P[transaction_records Collection]
+    
+    H --> H1[category_name: string]
+    I --> I1[payment_method: string]
+    J --> J1[amount: number<br/>category: string<br/>type: string<br/>date: date<br/>user: string<br/>payment_from: string<br/>payment_to: string]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#e8f5e8
+    style E fill:#e8f5e8
+    style F fill:#fff3e0
+    style G fill:#fff3e0
+    style H fill:#fce4ec
+    style I fill:#fce4ec
+    style J fill:#fce4ec
+    style K fill:#fce4ec
+    style L fill:#fce4ec
+    style M fill:#fce4ec
+    style N fill:#fce4ec
+    style O fill:#fce4ec
+    style P fill:#fce4ec
+```
+
 ### Main Database Collections:
 - **login**: Stores user authentication data
   - `username`: User's login name
