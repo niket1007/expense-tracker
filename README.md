@@ -216,7 +216,6 @@ personal_resume_website/
 ├── .streamlit/
 │   └── secrets.toml      # Configuration file (not in repo)
 ├── pages/                # Streamlit pages
-├── utils/                # Helper functions
 └── README.md
 ```
 
