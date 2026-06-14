@@ -1,29 +1,33 @@
-import streamlit as st 
+import streamlit as st
+from typing import Optional
+
+# Pages
 from pages.utility import *
-from pages.db import user_info_db
 
+# MongoDb
+from mongodb.mongodb import MongoDB
 
-def init_db():
-    db_obj = user_info_db.create_user_info_mongo_connection()
-    if not isMongoDbObject(db_obj):
-        user_info_db.cache_clear()
-        st.error("Error: {0}".format(db_obj), icon=":material/error:")
+def init_db() -> Optional[MongoDB]:
+    db_name = st.secrets.get("user_info", {}).get("database_name", None)
+    db_obj = None
+    with st.spinner("Connecting to Database", show_time=True):
+        db_obj = MongoDB(db_name=db_name)
+
+    if db_obj.check_connection_null():
+        st.error("Error: Unable to connect to db", icon=":material/error:")
         return None
     return db_obj
 
-def login_func(db_obj: object, data: dict) -> None:
+def login_func(db_obj: MongoDB, data: dict) -> None:
     if isEmptyString(data["username"]) or isEmptyString(data["password"]):
         st.error("Please enter your username and password", icon=":material/error:")
     else: 
-        result = user_info_db.fetch_user(db_obj, data)
-        if not isList(result):
-            if str(result) != "User doesn't exist.":
-                user_info_db.cache_clear()
-            st.error("Error: {0}".format(result), icon=":material/error:")
-            return
-
-        local_storage_data = "{0}:{1}".format(result[0]["username"], result[0]["group_id"])
-        st.session_state.local_storage.setItem("isUserLoggedIn", local_storage_data)
+        status, result = db_obj.get_user(data)
+        if isSuccess(status):
+            local_storage_data = "{0}:{1}".format(result["username"], result["group_id"])
+            st.session_state.local_storage.setItem("isUserLoggedIn", local_storage_data)
+        else:
+            st.error("Error: {0}".format(result), icon=":material/error:")    
 
 def main():
     """
@@ -34,7 +38,7 @@ def main():
     db_obj = init_db()
 
     # Check if connection is successful
-    if isMongoDbObject(db_obj):
+    if db_obj is not None:
         st.header("Login", divider="blue", anchor=False)
         username = st.text_input("Enter your username", placeholder="Username", key="login_username")
         password = st.text_input("Enter your password", type="password", placeholder="Password", key="login_password")

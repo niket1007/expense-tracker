@@ -1,15 +1,15 @@
-
 import streamlit as st
 from streamlit_local_storage import LocalStorage
 
+# MongoDb
+from mongodb.mongodb import MongoDB
+
 def log_out():
+    MongoDB().close_connections()
     st.session_state.local_storage.deleteAll()
     st.session_state.clear()
-    st.cache_data.clear()
-    st.cache_resource.clear()
 
 def main():
-
     if "localstorage" not in st.session_state:
         st.session_state.local_storage = LocalStorage()
 
@@ -39,7 +39,7 @@ def main():
             "Expenditure Analysis": [
                 st.Page("pages/Analysis/expenditure_analysis_main.py", url_path="expenditure_analysis", title="Expenditure Analysis", icon=":material/monitoring:"),
                 st.Page("pages/Analysis/show_transaction.py", url_path="show_transactions", title="Show Transaction", icon=":material/receipt_long:")
-            ]
+            ],
         }
         sidebar = st.sidebar
         sidebar.button("Log Out", on_click=log_out)

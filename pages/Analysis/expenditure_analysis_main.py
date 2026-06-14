@@ -1,21 +1,25 @@
 import streamlit as st
+from typing import Optional
+
+# Pages
 from pages.utility import *
 from pages.Analysis.per_user_spent import main as per_user_spent_main
 from pages.Analysis.category_wise_spent import main as category_wise_spent_main
-from pages.db import custom_db
 
+# MongoDb
+from mongodb.mongodb import MongoDB
 
-def init_db() -> None:
+def init_db() -> Optional[MongoDB]:
     group_id = get_group_id(st.session_state.local_storage)
-    db_obj = custom_db.create_user_info_mongo_connection(group_id)
-    if not isMongoDbObject(db_obj):
-        custom_db.clear_cache()
-        st.error("Error: {0}".format(db_obj), icon=":material/error:")
+    db_obj = MongoDB(db_name=group_id)
+
+    if db_obj.check_connection_null():
+        st.error("Error: Unable to connect to db", icon=":material/error:")
         return None
+
     return db_obj
 
-
-def expenditure_analysis(db_obj: object) -> None:
+def expenditure_analysis(db_obj: MongoDB) -> None:
     st.header("Expenditure Analysis", divider="blue", anchor=False)
 
     year, month, current_month_index = get_month_and_year_list()
@@ -38,11 +42,11 @@ def expenditure_analysis(db_obj: object) -> None:
 
         # Show per user expenses
         with st.expander("User wise expenses"):
-            per_user_spent_main(db_obj, custom_db, data)
+            per_user_spent_main(db_obj, data)
 
         # Show Category Expenses
         with st.expander("Category wise expenses"):
-            category_wise_spent_main(db_obj, custom_db, data)
+            category_wise_spent_main(db_obj, data)
 
 
 def main():
@@ -51,7 +55,7 @@ def main():
     """
 
     db_object = init_db()
-    if isMongoDbObject(db_object):
+    if db_object is not None:
         expenditure_analysis(db_object)
         
 main()

@@ -1,14 +1,20 @@
 import streamlit as st
-from pages.db import custom_db
+from typing import Optional
+
+# Pages
 from pages.utility import *
 
-def init_db() -> object | None:
+# MongoDb
+from mongodb.mongodb import MongoDB
+
+def init_db() -> Optional[MongoDB]:
     group_id = get_group_id(st.session_state.local_storage)
-    db_obj = custom_db.create_user_info_mongo_connection(group_id)
-    if not isMongoDbObject(db_obj):
-        custom_db.clear_cache()
-        st.error("Error: {0}".format(db_obj), icon=":material/error:")
+    db_obj = MongoDB(db_name=group_id)
+
+    if db_obj.check_connection_null():
+        st.error("Error: Unable to connect to db", icon=":material/error:")
         return None
+
     return db_obj
 
 def transform_data() -> dict:
@@ -41,25 +47,23 @@ def transform_data() -> dict:
         }
     return data
 
-def update_record(db_obj: object) -> None:
+def update_record(db_obj: MongoDB) -> None:
     data = transform_data()
-    result = transaction_data_validator(data)
-    if isSuccess(result):
-        result = custom_db.update_transaction_record(db_obj, data)
-        if not isSuccess(result):
-            custom_db.clear_cache("Cache_Resource")
+    validate_result = transaction_data_validator(data)
+    if isSuccess(validate_result):
+        status, result = db_obj.update_transaction_record(data)
+        if not isSuccess(status):
             print("show_transaction", "update_record", result)
     else:
-        print("show_transaction", "update_record", result)
+        print("show_transaction", "update_record", validate_result)
 
-def delete_record(db_obj: object) -> None:
-    result = custom_db.delete_transaction_record(db_obj, st.session_state["_id"])
+def delete_record(db_obj: MongoDB) -> None:
+    result = db_obj.delete_transaction_record(st.session_state["_id"])
     if not isSuccess(result):
-        custom_db.clear_cache("Cache_Resource")
         print("show_transaction", "delete_record", result)
 
 @st.dialog("Show data")
-def show_data(db_obj: object, data: dict, key: str) -> None:
+def show_data(db_obj: MongoDB, data: dict, key: str) -> None:
 
     if key in st.session_state:
         row_data = data[st.session_state[key]["selection"]["rows"][0]]
@@ -105,114 +109,133 @@ def show_data(db_obj: object, data: dict, key: str) -> None:
     else:
         st.success("Action performed successfully.")
 
-def populate_table(db_obj, selected_month, selected_year) -> None:
-    filter = {
+def populate_table(db_obj: MongoDB, selected_month: str, selected_year: str) -> None:
+    pipeline = [
+        {
+            "$match": {
             "date": {
                 "$regex": "{0}-{1}".format(selected_month, selected_year), 
                 "$options": "i"
-                }
             }
-    results = custom_db.fetch_transaction_records_with_filters(db_obj, filter,{})
-    if isList(results):
-        if not isEmptyList(results):
-            total_balance = {}
-            transaction_records = {"Income": [], "Payment": [], "Transfer": []}
+            }
+        },
+        {
+            "$group": {
+            "_id": "$type",
+            "records": { "$push": {
+                "_id": "$_id",
+                "type": "$type",
+                "amount": "$amount",
+                "category": "$category",
+                "payment_from": "$payment_from",
+                "payment_to": "$payment_to",
+                "date": "$date"} }
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "category": "$_id",
+                "records": 1
+            }
+        }
+    ]
+    result, records = db_obj.fetch_transaction_records_with_filters(pipeline)
 
-            for record in results:
-                record["amount"] = float(record["amount"])
-                if record["type"] == "Income":
-                    if record["payment_to"] in total_balance:
-                        total_balance[record["payment_to"]] += record["amount"]
+    if isSuccess(result):
+        total_balance = {}
+        transaction_records = {}
+
+        for record in records:
+            transaction_records[record["category"]] = record["records"]
+
+            for child_record in record["records"]:
+                if record["category"] == "Income":
+                    if child_record["payment_to"] in total_balance:
+                        total_balance[child_record["payment_to"]] += child_record["amount"]
                     else:
-                        total_balance[record["payment_to"]] = record["amount"]
-                    
-                    transaction_records["Income"].append(record)
-
-                elif record["type"] == "Payment":
-                    if record["payment_from"] in total_balance:
-                        total_balance[record["payment_from"]] -= record["amount"]
+                        total_balance[child_record["payment_to"]] = child_record["amount"]
+                
+                if record["category"] == "Payment":
+                    if child_record["payment_from"] in total_balance:
+                        total_balance[child_record["payment_from"]] -= child_record["amount"]
                     else:
-                        total_balance[record["payment_from"]] = -record["amount"]
-                    
-                    transaction_records["Payment"].append(record)
-
-                elif record["type"] == "Transfer":
-                    if record["payment_from"] in total_balance:
-                        total_balance[record["payment_from"]] -= record["amount"]
+                        total_balance[child_record["payment_from"]] = -child_record["amount"]
+                
+                if record["category"] == "Transfer":
+                    if child_record["payment_from"] in total_balance:
+                        total_balance[child_record["payment_from"]] -= child_record["amount"]
                     else:
-                        total_balance[record["payment_from"]] = -record["amount"]
-                    if record["payment_to"] in total_balance:
-                        total_balance[record["payment_to"]] += record["amount"]
+                        total_balance[child_record["payment_from"]] = -child_record["amount"]
+                    if child_record["payment_to"] in total_balance:
+                        total_balance[child_record["payment_to"]] += child_record["amount"]
                     else:
-                        total_balance[record["payment_to"]] = record["amount"]
-                    
-                    transaction_records["Transfer"].append(record)
+                        total_balance[child_record["payment_to"]] = child_record["amount"]
 
-            amount_column_config = {
-                                        "amount": st.column_config.NumberColumn(
-                                            "amount",
-                                            format="₹%.2f"
-                                        )
-                                    }
-            with st.container(height=200, border=False):
-                for payment_option in total_balance:
-                    amount = total_balance[payment_option]
-                    content = "**{0} ₹{1:.2f}**".format(payment_option, amount)
-                    content_box = ":green-badge[{}]" if amount > 0 else ":red-badge[{}]"
-                    st.markdown(content_box.format(content))
+        amount_column_config = {
+                                    "amount": st.column_config.NumberColumn(
+                                        "amount",
+                                        format="₹%.2f"
+                                    )
+                                }
+        with st.container(height=200, border=False):
+            for payment_option in total_balance:
+                amount = total_balance[payment_option]
+                content = "**{0} ₹{1:.2f}**".format(payment_option, amount)
+                content_box = ":green-badge[{}]" if amount > 0 else ":red-badge[{}]"
+                st.markdown(content_box.format(content))
 
-            if not isEmptyList(transaction_records["Payment"]):
-                with st.expander("Show all the Expense records", icon=":material/currency_rupee:"):
-                    with st.container(height=300, border=False):
-                        df = convert_to_df(transaction_records["Payment"])
-                        df.drop(["type", "_id"], axis='columns', inplace=True)
-                        st.dataframe(df,
-                                    height=300,
-                                    hide_index=True,
-                                    column_order=["date", "amount", "category", "payment_from", "spent_by"],
-                                    key="payment_data",
-                                    column_config=amount_column_config,
-                                    selection_mode="single-row",
-                                    on_select=lambda : show_data(db_obj,
-                                                                transaction_records["Payment"],
-                                                                "payment_data"))
+        if not isEmptyList(transaction_records["Payment"]):
+            with st.expander("Show all the Expense records", icon=":material/currency_rupee:"):
+                with st.container(height=300, border=False):
+                    df = convert_to_df(transaction_records["Payment"])
+                    df.drop(["type", "_id"], axis='columns', inplace=True)
+                    st.dataframe(df,
+                                height=300,
+                                hide_index=True,
+                                column_order=["date", "amount", "category", "payment_from", "spent_by"],
+                                key="payment_data",
+                                column_config=amount_column_config,
+                                selection_mode="single-row",
+                                on_select=lambda : show_data(db_obj,
+                                                            transaction_records["Payment"],
+                                                            "payment_data"))
 
-            if not isEmptyList(transaction_records["Income"]):
-                with st.expander("Show all the Income records", icon=":material/money_bag:"):
-                    with st.container(height=300, border=False):
-                        df = convert_to_df(transaction_records["Income"])
-                        df.drop(["type", "_id"], axis='columns', inplace=True)
-                        st.dataframe(df,
-                                    height=300,
-                                    hide_index=True,
-                                    column_order=["date", "amount", "payment_to", "spent_by"],
-                                    key="income_data",
-                                    column_config=amount_column_config,
-                                    selection_mode="single-row",
-                                    on_select=lambda : show_data(db_obj,
-                                                                transaction_records["Income"],
-                                                                "income_data"))
-            
-            if not isEmptyList(transaction_records["Transfer"]):
-                with st.expander("Show all the Transfer records", icon=":material/swap_horiz:"):
-                    with st.container(height=300, border=False):
-                        df = convert_to_df(transaction_records["Transfer"])
-                        df.drop(["type", "_id"], axis='columns', inplace=True)
-                        st.dataframe(df,
-                                    height=300,
-                                    hide_index=True,
-                                    column_order=["date", "amount", "payment_from", "payment_to", "spent_by"],
-                                    key="transfer_data",
-                                    column_config=amount_column_config,
-                                    selection_mode="single-row",
-                                    on_select=lambda : show_data(db_obj,
-                                                                transaction_records["Transfer"],
-                                                                "transfer_data"))
+        if not isEmptyList(transaction_records["Income"]):
+            with st.expander("Show all the Income records", icon=":material/money_bag:"):
+                with st.container(height=300, border=False):
+                    df = convert_to_df(transaction_records["Income"])
+                    df.drop(["type", "_id"], axis='columns', inplace=True)
+                    st.dataframe(df,
+                                height=300,
+                                hide_index=True,
+                                column_order=["date", "amount", "payment_to", "spent_by"],
+                                key="income_data",
+                                column_config=amount_column_config,
+                                selection_mode="single-row",
+                                on_select=lambda : show_data(db_obj,
+                                                            transaction_records["Income"],
+                                                            "income_data"))
+        
+        if not isEmptyList(transaction_records["Transfer"]):
+            with st.expander("Show all the Transfer records", icon=":material/swap_horiz:"):
+                with st.container(height=300, border=False):
+                    df = convert_to_df(transaction_records["Transfer"])
+                    df.drop(["type", "_id"], axis='columns', inplace=True)
+                    st.dataframe(df,
+                                height=300,
+                                hide_index=True,
+                                column_order=["date", "amount", "payment_from", "payment_to", "spent_by"],
+                                key="transfer_data",
+                                column_config=amount_column_config,
+                                selection_mode="single-row",
+                                on_select=lambda : show_data(db_obj,
+                                                            transaction_records["Transfer"],
+                                                            "transfer_data"))
     else:
-        custom_db.clear_cache("Cache_Resource")
-        st.error("Error: {0}".format(results), icon=":material/error:")
+        st.error("Error: {0}".format(records), icon=":material/error:")
 
-def show_transactions(db_obj):
+def show_transactions(db_obj: MongoDB):
     
     st.header("Show Transaction", divider="blue", anchor=False)
     
@@ -235,22 +258,20 @@ def show_transactions(db_obj):
 
 def main():
     db_obj = init_db()
-    if isMongoDbObject(db_obj):
+    if db_obj is not None:
         global payment_options, category_list
-        payment_options = custom_db.fetch_all_payment_options(db_obj)
-        if not isList(payment_options):
+        payment_options = db_obj.get_payment_option_records()
+        if isString(payment_options):
             st.error("Error: {0}".format(payment_options), icon=":material/error:")
-            custom_db.clear_cache("Both")
             return
-        else:
+        elif isList(payment_options):
             payment_options = [i["pay_option_name"] for i in payment_options]
 
-        category_list = custom_db.fetch_all_categories(db_obj)
-        if not isList(category_list):
+        category_list = db_obj.get_category_records()
+        if isString(category_list):
             st.error("Error: {0}".format(category_list), icon=":material/error:")
-            custom_db.clear_cache("Both")
-            return
-        else:
+            return 
+        elif isList(category_list):
             category_list = [i["category_name"] for i in category_list]
 
         show_transactions(db_obj)
