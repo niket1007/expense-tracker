@@ -36,7 +36,7 @@ def main(db_obj: MongoDB, data: object):
             "$sort": {"amount": -1}
         }
     ]
-    status, transaction_records = db_obj.fetch_transaction_records_with_filters(pipeline)
+    status, transaction_records = db_obj.get_transaction_records_with_filters(pipeline)
 
     if isSuccess(status):
         with st.container(height=300, border=False):

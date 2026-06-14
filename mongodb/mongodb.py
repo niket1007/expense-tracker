@@ -92,7 +92,6 @@ class MongoDB:
         except Exception as e:
             return str(e)
 
-
     def get_user(self, data: dict) -> tuple[str, str|dict]:
         try:
             login_collection_name = st.secrets.get("user_info", {}).get("login_collection", None)
@@ -120,7 +119,7 @@ class MongoDB:
         except Exception as e:
             return "Error", str(e)
     
-    def fetch_transaction_records_with_filters(
+    def get_transaction_records_with_filters(
             self, pipeline: list, ) -> tuple:
         try:
             collection_name = st.secrets.get("custom_db_info", {}).get("transaction_collection", None)
@@ -137,7 +136,21 @@ class MongoDB:
                 return "Error", "Unexpected error"
         except Exception as e:
             return "Error", str(e)
+    
+    def get_savings_amount(self, pipeline: list) -> tuple:
+        try:
+           collection_name = st.secrets.get("custom_db_info", {}).get("transaction_collection", None)
 
+           if collection_name:
+               results = self._db[collection_name].aggregate(pipeline)
+               if results is None:
+                   return "Error", "No data found"
+               return "Success", list(results)
+           else:
+               return "Error", "Unexpected error"
+        except Exception as e:
+            return "Error", str(e)
+    
     def insert_user(self, data: dict) -> tuple[str, str|dict]:
         try:
             login_collection_name = st.secrets.get("user_info", {}).get("login_collection", None)

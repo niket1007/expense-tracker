@@ -40,7 +40,7 @@ def main(db_obj: MongoDB, data: object):
     ]
     
 
-    status, transaction_records = db_obj.fetch_transaction_records_with_filters(pipeline)
+    status, transaction_records = db_obj.get_transaction_records_with_filters(pipeline)
 
     if isSuccess(status):
         per_user_total_spent = {}
