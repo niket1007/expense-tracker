@@ -137,9 +137,74 @@ class MongoDB:
         except Exception as e:
             return "Error", str(e)
     
-    def get_savings_amount(self, pipeline: list) -> tuple:
+    def get_savings_amount(self, month: str, year: str) -> tuple:
         try:
            collection_name = st.secrets.get("custom_db_info", {}).get("transaction_collection", None)
+           pipeline = [
+                {
+                    "$match": {
+                        "date": {
+                            "$regex": "{0}-{1}".format(month, year),
+                            "$options": "i",
+                        },
+                        "type": "Income",
+                        "payment_to": "Investment"
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": "$payment_to",
+                        "total_amount": {
+                            "$sum": "$amount"
+                        }
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "type": "$_id",
+                        "total_amount": 1
+                    }
+                }
+            ]
+           if collection_name:
+               results = self._db[collection_name].aggregate(pipeline)
+               if results is None:
+                   return "Error", "No data found"
+               return "Success", list(results)
+           else:
+               return "Error", "Unexpected error"
+        except Exception as e:
+            return "Error", str(e)
+        
+    def get_investment_records(self, month: str, year: str) -> tuple:
+        try:
+           collection_name = st.secrets.get("custom_db_info", {}).get("savings_collection", None)
+           pipeline = [
+                {
+                    "$match": {
+                        "date": {
+                            "$regex": "{0}-{1}".format(month, year),
+                            "$options": "i",
+                        },
+                    }
+                },
+                {
+                    "$sort": {
+                        "amount": -1
+                    }
+                },
+                {
+                    "$project": {
+                        "_id": 0,
+                        "Amount": "$amount",
+                        "Type": "$inv_type",
+                        "Payment Source": "$payment_from",
+                        "Spent by": "$spent_by",
+                        "Date": "$date"
+                    }
+                }
+            ]
 
            if collection_name:
                results = self._db[collection_name].aggregate(pipeline)
@@ -223,6 +288,37 @@ class MongoDB:
         except Exception as e:
             return "Error", str(e)
     
+    def insert_investment_records(self, data: dict) -> tuple:
+        try:
+            transaction_collection_name = st.secrets.get("custom_db_info", {}).get("transaction_collection", None)
+            investment_collection_name = st.secrets.get("custom_db_info", {}).get("savings_collection", None)
+            if transaction_collection_name and investment_collection_name:
+                # Insert a new transaction record
+                tst_data = {
+                    "amount": data["amount"],
+                    "type": "Payment",
+                    "date": data["date"],
+                    "payment_from": data["payment_from"],
+                    "category": "Investment",
+                    "spent_by": data["spent_by"]
+                }
+                self._db[transaction_collection_name].insert_one(tst_data)
+
+                # Insert investment record
+                inv_record = {
+                    "amount": data["amount"],
+                    "date": data["date"],
+                    "payment_from": data["payment_from"],
+                    "inv_type": data["inv_type"],
+                    "spent_by": data["spent_by"]
+                }
+                self._db[investment_collection_name].insert_one(inv_record)
+                return "Success", None
+            else: 
+                return "Error", "Unexpected error"
+        except Exception as e:
+            return "Error", str(e)
+
     def update_transaction_record(self, data: dict) -> tuple:
         try:
             collection_name = st.secrets.get("custom_db_info", {}).get("transaction_collection", None)
@@ -251,6 +347,8 @@ class MongoDB:
                 return "Unexpected error"
         except Exception as e:
             return str(e)
+
+    
 
     def clear_payment_record_option_records(self) -> None:
         self._payment_option_records = None

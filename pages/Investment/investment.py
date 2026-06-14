@@ -18,39 +18,61 @@ def init_db() -> Optional[MongoDB]:
         return None
     return db_obj
 
-
-def populate_saving_data(db_obj: MongoDB, month: str, year: str):
-    pipeline = [
-        {
-            "$match": {
-                "date": {
-                    "$regex": "{0}-{1}".format(month, year),
-                    "$options": "i",
-                },
-                "type": "Income",
-                "payment_to": "Savings"
+@st.dialog("Add Investment")
+def add_investment_record(db_obj: MongoDB, payment_options: list):
+    inv_amount = st.number_input("Investment Amount", min_value=0)
+    inv_type = st.text_input("Investment Type")
+    inv_date = st.date_input("Date", value="today", key="inv_date")
+    inv_payment_from = st.selectbox("Amount will be deducted from",
+                                    payment_options,
+                                    key="inv_payment_from")
+    is_clicked = st.button("submit")
+    
+    if is_clicked:
+        if (not isValidNumber(inv_amount) or 
+            isEmptyString(inv_type) or 
+            isEmptyString(inv_payment_from) or
+            isEmptyObject(inv_date)):
+            st.error("Field do not contain valid value")
+        else:
+            data = {
+                "amount": inv_amount,
+                "date": convert_date_to_str(inv_date),
+                "payment_from": inv_payment_from,
+                "inv_type": inv_type,
+                "spent_by": get_username(st.session_state.local_storage)
             }
-        },
-        {
-            "$group": {
-                "_id": "$category",
-                "amount": {
-                    "$sum": "$amount"
-                }
-            }
-        },
-        {
-            "$project": {
-                "_id": "type"
-            }
-        }
-    ]
-    status, result = db_obj.get_savings_amount(pipeline)
+            status, result = db_obj.insert_investment_records(data)
+            if isSuccess(status):
+                st.success("Investment record added")
+            else:
+                st.error(result)
+
+def populate_saving_data(db_obj: MongoDB, month: str, year: str, payment_options: list):
+    status, total_inv_amt = db_obj.get_savings_amount(month, year)
+    if isSuccess(status) and total_inv_amt == 0:
+        st.error("Investment amount is zero. Please add into investment through income tab.")
+    elif not isSuccess(status):
+        st.error(total_inv_amt)
+        return
+
+    status, inv_records = db_obj.get_investment_records(month, year)
+    if not isSuccess(status):
+        st.error(inv_records)
+        return  
+    elif isSuccess(status) and isEmptyList(inv_records):
+        st.warning("No investment records found.")
+    else:
+        df = convert_to_df(inv_records)
+        st.data_editor(df, num_rows='fixed')
+    
+    st.button("Add Investment", 
+              on_click=lambda: add_investment_record(db_obj, payment_options))
 
 
-def show_savings_ui(db_obj: MongoDB):
+def show_savings_ui(db_obj: MongoDB, payment_options: list):
     st.title("Savings Planner")
-    st.warning("Create 'Savings' in payment options, then this page will work")
+    st.warning("Create 'Investment' in payment options and category, then this page will work")
 
     year_list, month_list, current_month_index = get_month_and_year_list()
 
@@ -67,13 +89,18 @@ def show_savings_ui(db_obj: MongoDB):
     clicked = st.button(label="Submit", key="show_transaction_button")
 
     if clicked:
-        populate_saving_data(db_obj, selected_month, selected_year)
-
+        populate_saving_data(db_obj, selected_month, selected_year, payment_options)
 
 def main():
     db_obj = init_db()
     if db_obj is not None:
-        show_savings_ui(db_obj)
-
+        payment_options = db_obj.get_payment_option_records()
+        if isString(payment_options):
+            st.error("Error: {0}".format(payment_options), icon=":material/error:")
+            return
+        elif isList(payment_options):
+            payment_options = [i["pay_option_name"] for i in payment_options]
+        
+        show_savings_ui(db_obj, payment_options)
 
 main()

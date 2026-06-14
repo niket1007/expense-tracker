@@ -9,7 +9,6 @@ def isEmptyString(value:str) -> bool:
     Check if a string is empty or contains only whitespace characters.
     """
     return value is None or value.strip() == ""
-    
 
 def isEmptyObject(value:object) -> bool:
     """
@@ -28,6 +27,12 @@ def isEmptyDict(value:dict) -> bool:
     Check if a dictionary is empty.
     """
     return value is None or len(value) == 0
+
+def isValidNumber(value: int|float) -> bool:
+    """
+    Check if a value is none or less than zero
+    """
+    return value is not None or value > 0
 
 def isDict(value:object) -> bool:
     """
