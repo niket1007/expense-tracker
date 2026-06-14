@@ -1,49 +1,57 @@
 import streamlit as st
-from pages.db import custom_db
+from typing import Optional
+
+# Pages
 from pages.utility import *
 
-def init_db():
+# MongoDB
+from mongodb.mongodb import MongoDB
+
+def init_db() -> Optional[MongoDB]:
     group_id = get_group_id(st.session_state.local_storage)
-    db_obj = custom_db.create_user_info_mongo_connection(group_id)
-    if not isMongoDbObject(db_obj):
-        custom_db.clear_cache()
+    db_obj = None
+    with st.spinner("Connecting to Database", show_time=True):
+        db_obj = MongoDB(db_name=group_id) 
+    db_obj = MongoDB(db_name=group_id) 
+    if db_obj.check_connection_null():
         st.error("Error: {0}".format(db_obj), icon=":material/error:")
-        return None
+        return None  
     return db_obj
 
-def save_category(db_obj: object, category_name: str) -> None:
+def save_category(db_obj: MongoDB, category_name: str) -> None:
     if not isEmptyString(category_name):
-        result = custom_db.insert_category_record(
-            db_obj,{"name": category_name})
-        if isSuccess(result):
-            custom_db.clear_cache("Cache_Data")
+        status, result = db_obj.insert_category_record({"name": category_name})
+        if isSuccess(status):
+            db_obj.clear_category_records()
             st.success("Category added successfully", icon=":material/done_all:")
         else:
-            custom_db.clear_cache()
             st.error("Error: {0}".format(result), icon=":material/error:")
 
 def show_categories(categories: list) -> None:
-    if not isList(categories):
-        custom_db.clear_cache()
-        st.error("Error: {0}".format(categories), icon=":material/error:")    
-    elif not isEmptyList(categories):
+    if isList(categories) and not isEmptyList(categories):
         with st.container(height=500, border=False):
             st.subheader("Available Categories", anchor=False)
             st.dataframe(convert_to_df(categories))
+    elif isString(categories):
+        st.error("Error: {0}".format(categories), icon=":material/error:")
+    else:
+        st.warning("No category available")
 
-def crud_category(db_obj: object, categories: list) -> None:
+def crud_category(db_obj: MongoDB, categories: list) -> None:
     category_name = st.text_input("Enter Category Name",
                                     placeholder="Category Name",
                                     key="category_name")
-    st.button("Save the changes",
-            on_click=save_category, 
-            args=(db_obj, category_name))
-    show_categories(categories)
+    is_clicked = st.button("Save the changes")
+    show_categories(db_obj, categories)
+    if is_clicked:
+        save_category(db_obj, category_name)
+        st.rerun()
+    
 
 def main():
     db_obj = init_db()
-    if isMongoDbObject(db_obj):    
-        categories = custom_db.fetch_all_categories(db_obj)
+    if db_obj is not None:    
+        categories = db_obj.get_category_records()
         crud_category(db_obj, categories)
 
 main()

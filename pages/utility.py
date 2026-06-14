@@ -41,6 +41,12 @@ def isList(value:object) -> bool:
     """
     return isinstance(value, list)
 
+def isString(value:object) -> bool:   
+    """
+    Check if a value is a string.
+    """
+    return isinstance(value, str)
+
 def isSuccess(result:object) -> bool:
     """
     Check if the result is a success message.
@@ -58,26 +64,23 @@ def convert_to_df(data: dict | list, columns: list = None) -> object:
     Convert a dict to a DataFrame.
     """
     if not isEmptyList(columns):
-        return pd.DataFrame(data.items(), columns=columns)
+        return pd.DataFrame(data, columns=columns)
     return pd.DataFrame(data)
     
 
 def transaction_data_validator(data: dict):
     valid = "Success"
 
-    for key in data:
-        if key == "_id":
-            if data[key] is None:
-                valid = "Provide value for {0}".format(key)
-                return valid  
-        elif key == "amount":
-            continue
-        elif isEmptyString(data[key]):
+    for key in data:  
+        if key == "amount" and data[key] == 0:
+            valid = "Amount cannot be zero"
+            return valid
+        elif isString(data[key]) and isEmptyString(data[key]):
             valid = "Provide value for {0}".format(key)
             return valid 
     
     if data["type"] == "Transfer" and data["payment_from"] == data["payment_to"]:
-        valid = "Transfer from and to payment option cannot be same"
+        valid = "Payment from and to fields cannot be same"
         return valid
 
     return valid
