@@ -27,7 +27,8 @@ def populate_saving_data(db_obj: MongoDB, month: str, year: str):
                     "$regex": "{0}-{1}".format(month, year),
                     "$options": "i",
                 },
-                "category": "Savings"
+                "type": "Income",
+                "payment_to": "Savings"
             }
         },
         {
@@ -49,7 +50,7 @@ def populate_saving_data(db_obj: MongoDB, month: str, year: str):
 
 def show_savings_ui(db_obj: MongoDB):
     st.title("Savings Planner")
-    st.warning("Create 'Savings' category, then this page will work")
+    st.warning("Create 'Savings' in payment options, then this page will work")
 
     year_list, month_list, current_month_index = get_month_and_year_list()
 

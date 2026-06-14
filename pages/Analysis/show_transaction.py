@@ -121,8 +121,6 @@ def show_data(
     else:
         st.success("Action performed successfully.")
 
-def populate_table(db_obj: MongoDB, selected_month: str, selected_year: str) -> None:
-
 def populate_table(
     db_obj: MongoDB, selected_month: str, selected_year: str, po: list, cl: list
 ) -> None:
@@ -292,7 +290,6 @@ def populate_table(
                     )
     else:
         st.error("Error: {0}".format(records), icon=":material/error:")
-
 
 def show_transactions(db_obj: MongoDB, po: list, cl: list):
 

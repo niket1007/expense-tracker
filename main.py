@@ -40,8 +40,8 @@ def main():
                 st.Page("pages/Analysis/expenditure_analysis_main.py", url_path="expenditure_analysis", title="Expenditure Analysis", icon=":material/monitoring:"),
                 st.Page("pages/Analysis/show_transaction.py", url_path="show_transactions", title="Show Transaction", icon=":material/receipt_long:")
             ],
-            "Savings": [
-                st.Page("pages/Savings/savings.py", url_path="savings", title="Savings Planner", icon=":material/monitoring:"),
+            "Investment": [
+                st.Page("pages/Investment/investment.py", url_path="investment", title="Investment Planner", icon=":material/monitoring:"),
             ],
         }
         sidebar = st.sidebar
