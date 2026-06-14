@@ -12,7 +12,6 @@ def init_db() -> Optional[MongoDB]:
     db_obj = None
     with st.spinner("Connecting to Database", show_time=True):
         db_obj = MongoDB(db_name=group_id) 
-    db_obj = MongoDB(db_name=group_id) 
     if db_obj.check_connection_null():
         st.error("Error: {0}".format(db_obj), icon=":material/error:")
         return None  
@@ -42,7 +41,7 @@ def crud_category(db_obj: MongoDB, categories: list) -> None:
                                     placeholder="Category Name",
                                     key="category_name")
     is_clicked = st.button("Save the changes")
-    show_categories(db_obj, categories)
+    show_categories(categories)
     if is_clicked:
         save_category(db_obj, category_name)
         st.rerun()

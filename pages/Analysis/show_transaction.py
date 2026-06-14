@@ -68,7 +68,6 @@ def delete_record(db_obj: MongoDB) -> None:
 
 
 @st.dialog("Show data")
-def show_data(db_obj: MongoDB, data: dict, key: str) -> None:
 def show_data(
     db_obj: MongoDB, data: dict, key: str, payment_options: list, category_list: list
 ) -> None:
@@ -320,7 +319,7 @@ def show_transactions(db_obj: MongoDB, po: list, cl: list):
 def main():
     db_obj = init_db()
     if db_obj is not None:
-        global payment_options, category_list
+
         payment_options = db_obj.get_payment_option_records()
         if isString(payment_options):
             st.error("Error: {0}".format(payment_options), icon=":material/error:")

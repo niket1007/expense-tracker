@@ -43,7 +43,7 @@ def crud_payment_options(db_obj: MongoDB, payment_options: list) -> None:
         placeholder="Payment Option Name",
         key="payment_option_name")
     is_clicked = st.button("Save the changes")
-    show_payment_options(db_obj, payment_options)
+    show_payment_options(payment_options)
 
     if is_clicked:
         save_payment_options(db_obj, payment_option_name)

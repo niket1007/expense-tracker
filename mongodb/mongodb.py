@@ -231,7 +231,7 @@ class MongoDB:
                 # Update existing record
                 filter = {"_id": data["_id"]}
                 value = {"$set": data}
-                self._db[collection_name].update_one(filter, value, True)
+                self._db[collection_name].update_one(filter, value)
                 return "Success", None
             else:
                 return "Error", "Unexpected error"
