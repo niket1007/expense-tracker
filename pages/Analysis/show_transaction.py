@@ -63,7 +63,8 @@ def delete_record(db_obj: MongoDB) -> None:
         print("show_transaction", "delete_record", result)
 
 @st.dialog("Show data")
-def show_data(db_obj: MongoDB, data: dict, key: str) -> None:
+def show_data(
+    db_obj: MongoDB, data: dict, key: str, payment_options: list, category_list: list) -> None:
 
     if key in st.session_state:
         row_data = data[st.session_state[key]["selection"]["rows"][0]]
@@ -109,7 +110,8 @@ def show_data(db_obj: MongoDB, data: dict, key: str) -> None:
     else:
         st.success("Action performed successfully.")
 
-def populate_table(db_obj: MongoDB, selected_month: str, selected_year: str) -> None:
+def populate_table(
+        db_obj: MongoDB, selected_month: str, selected_year: str, po: list, cl: list) -> None:
     pipeline = [
         {
             "$match": {
@@ -185,7 +187,7 @@ def populate_table(db_obj: MongoDB, selected_month: str, selected_year: str) -> 
                 content_box = ":green-badge[{}]" if amount > 0 else ":red-badge[{}]"
                 st.markdown(content_box.format(content))
 
-        if not isEmptyList(transaction_records["Payment"]):
+        if not isEmptyList(transaction_records.get("Payment")):
             with st.expander("Show all the Expense records", icon=":material/currency_rupee:"):
                 with st.container(height=300, border=False):
                     df = convert_to_df(transaction_records["Payment"])
@@ -199,9 +201,9 @@ def populate_table(db_obj: MongoDB, selected_month: str, selected_year: str) -> 
                                 selection_mode="single-row",
                                 on_select=lambda : show_data(db_obj,
                                                             transaction_records["Payment"],
-                                                            "payment_data"))
+                                                            "payment_data", po, cl))
 
-        if not isEmptyList(transaction_records["Income"]):
+        if not isEmptyList(transaction_records.get("Income")):
             with st.expander("Show all the Income records", icon=":material/money_bag:"):
                 with st.container(height=300, border=False):
                     df = convert_to_df(transaction_records["Income"])
@@ -215,9 +217,9 @@ def populate_table(db_obj: MongoDB, selected_month: str, selected_year: str) -> 
                                 selection_mode="single-row",
                                 on_select=lambda : show_data(db_obj,
                                                             transaction_records["Income"],
-                                                            "income_data"))
+                                                            "income_data", po, cl))
         
-        if not isEmptyList(transaction_records["Transfer"]):
+        if not isEmptyList(transaction_records.get("Transfer")):
             with st.expander("Show all the Transfer records", icon=":material/swap_horiz:"):
                 with st.container(height=300, border=False):
                     df = convert_to_df(transaction_records["Transfer"])
@@ -231,11 +233,11 @@ def populate_table(db_obj: MongoDB, selected_month: str, selected_year: str) -> 
                                 selection_mode="single-row",
                                 on_select=lambda : show_data(db_obj,
                                                             transaction_records["Transfer"],
-                                                            "transfer_data"))
+                                                            "transfer_data", po, cl))
     else:
         st.error("Error: {0}".format(records), icon=":material/error:")
 
-def show_transactions(db_obj: MongoDB):
+def show_transactions(db_obj: MongoDB, po: list, cl: list):
     
     st.header("Show Transaction", divider="blue", anchor=False)
     
@@ -254,12 +256,11 @@ def show_transactions(db_obj: MongoDB):
         key = "show_transaction_button")
     
     if clicked:
-        populate_table(db_obj, selected_month, selected_year)
+        populate_table(db_obj, selected_month, selected_year, po, cl)
 
 def main():
     db_obj = init_db()
     if db_obj is not None:
-        global payment_options, category_list
         payment_options = db_obj.get_payment_option_records()
         if isString(payment_options):
             st.error("Error: {0}".format(payment_options), icon=":material/error:")
@@ -274,6 +275,6 @@ def main():
         elif isList(category_list):
             category_list = [i["category_name"] for i in category_list]
 
-        show_transactions(db_obj)
+        show_transactions(db_obj, payment_options, category_list)
 
 main()
