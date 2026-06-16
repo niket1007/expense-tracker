@@ -9,7 +9,9 @@ from mongodb.mongodb import MongoDB
 
 def init_db() -> Optional[MongoDB]:
     group_id = get_group_id(st.session_state.local_storage)
-    db_obj = MongoDB(db_name=group_id)
+    db_obj = None
+    with st.spinner("Connecting to Database", show_time=True):
+        db_obj = MongoDB(db_name=group_id)
 
     if db_obj.check_connection_null():
         st.error("Error: Unable to connect to db", icon=":material/error:")

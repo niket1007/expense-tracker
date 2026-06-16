@@ -48,10 +48,72 @@ def add_investment_record(db_obj: MongoDB, payment_options: list):
             else:
                 st.error(result)
 
+def update_record(db_obj: MongoDB) -> None:
+    data = {
+        "_id": st.session_state["_id"],
+        "amount": st.session_state["inv_amount"],
+        "date": convert_date_to_str(st.session_state["inv_date"]),
+        "payment_from": st.session_state["inv_payment_source"],
+        "inv_type": st.session_state["inv_type"]
+    }
+    validate_result = transaction_data_validator(data)
+    if isSuccess(validate_result):
+        status, result = db_obj.update_transaction_record(data)
+        if not isSuccess(status):
+            print("show_transaction", "update_record", result)
+    else:
+        print("show_transaction", "update_record", validate_result)
+
+def delete_record(db_obj: MongoDB) -> None:
+    result = db_obj.delete_transaction_record(st.session_state["_id"])
+    if not isSuccess(result):
+        print("show_transaction", "delete_record", result)
+
+
+@st.dialog("Update-Delete Investment")
+def update_delete_data(db_obj: MongoDB, key: str, data: list, payment_options: list):
+    if key in st.session_state:
+        row_data = data[st.session_state[key]["selection"]["rows"][0]]
+        st.session_state["_id"] = row_data["_id"]
+
+        with st.form("Update/Delete", enter_to_submit=False, border=False):
+            if "Amount" in row_data:
+                st.number_input("Amount", value=row_data["Amount"], key="inv_amount")
+
+            if "Payment Source" in row_data:
+                st.selectbox(
+                    label="Payment Source",
+                    options=payment_options,
+                    index=get_index(payment_options, row_data["Payment Source"]),
+                    key="inv_payment_source",
+                )
+
+            if "Date" in row_data:
+                st.date_input(
+                    "Date",
+                    value=convert_str_to_date(row_data["Date"]),
+                    key="inv_date",
+                )
+
+            if "Type" in row_data:
+                st.text_input(
+                    label="Investment Type",
+                    value = row_data["Type"],
+                    key="inv_type"
+                )
+
+            st.form_submit_button(
+                "Update", type="primary", on_click=update_record, args=(db_obj,)
+            )
+        st.button("Delete", on_click=delete_record, args=(db_obj,))
+    else:
+        st.success("Action performed successfully.")
+
 def populate_saving_data(db_obj: MongoDB, month: str, year: str, payment_options: list):
     status, total_inv_amt = db_obj.get_savings_amount(month, year)
-    if isSuccess(status) and total_inv_amt == 0:
-        st.error("Investment amount is zero. Please add into investment through income tab.")
+    if isSuccess(status) and isEmptyList(total_inv_amt):
+        st.error("Investment amount is zero. Please add into 'Investment' through income tab.")
+        return
     elif not isSuccess(status):
         st.error(total_inv_amt)
         return
@@ -62,12 +124,31 @@ def populate_saving_data(db_obj: MongoDB, month: str, year: str, payment_options
         return  
     elif isSuccess(status) and isEmptyList(inv_records):
         st.warning("No investment records found.")
-    else:
-        df = convert_to_df(inv_records)
-        st.data_editor(df, num_rows='fixed')
+        return
     
-    st.button("Add Investment", 
-              on_click=lambda: add_investment_record(db_obj, payment_options))
+    total_inv_amt = total_inv_amt[0].get("total_amount")
+    total_invested_amt = 0
+    for record in inv_records:
+        total_invested_amt += record["Amount"]
+    st.success(f"Invested Amount/Total Investment Amount: {total_invested_amt}/{total_inv_amt}") 
+    df = convert_to_df(inv_records)
+    df.drop(["_id"], axis="columns", inplace=True)
+    dataframe_key = "investment"
+    st.dataframe(
+        data=df,
+        key=dataframe_key,
+        column_order=[
+            "Date",
+            "Amount",
+            "Type",
+            "Payment Source",
+            "Spent by",
+        ],
+        hide_index=True,
+        selection_mode="single-row",
+        on_select=lambda: update_delete_data(db_obj, dataframe_key, inv_records, payment_options))
+
+    
 
 
 def show_savings_ui(db_obj: MongoDB, payment_options: list):
@@ -86,10 +167,18 @@ def show_savings_ui(db_obj: MongoDB, payment_options: list):
     with col2:
         selected_year = st.selectbox("Select a year", year_list)
 
-    clicked = st.button(label="Submit", key="show_transaction_button")
+    col3, col4 = st.columns(2)
 
+    clicked = False
+    with col3:
+        clicked = st.button(
+            label="Submit", key="show_transaction_button") 
     if clicked:
         populate_saving_data(db_obj, selected_month, selected_year, payment_options)
+
+    with col4: 
+        st.button("Add Investment", 
+                  on_click=lambda: add_investment_record(db_obj, payment_options))
 
 def main():
     db_obj = init_db()

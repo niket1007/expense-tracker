@@ -10,7 +10,9 @@ from mongodb.mongodb import MongoDB
 
 def init_db() -> Optional[MongoDB]:
     group_id = get_group_id(st.session_state.local_storage)
-    db_obj = MongoDB(db_name=group_id)
+    db_obj = None
+    with st.spinner("Connecting to Database", show_time=True):
+        db_obj = MongoDB(db_name=group_id)
 
     if db_obj.check_connection_null():
         st.error("Error: Unable to connect to db", icon=":material/error:")
@@ -215,7 +217,9 @@ def populate_table(
             ):
                 with st.container(height=300, border=False):
                     df = convert_to_df(transaction_records["Payment"])
-                    df.drop(["type", "_id"], axis="columns", inplace=True)
+                    drop_columns = (["type", "_id", "inv_type"] if "inv_type" in df.columns 
+                                    else ["type", "_id"])
+                    df.drop(drop_columns, axis="columns", inplace=True)
                     st.dataframe(
                         df,
                         height=300,

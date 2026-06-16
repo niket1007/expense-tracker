@@ -64,7 +64,7 @@ def isMongoDbObject(value: object):
     """
     return isinstance(value, pymongo.synchronous.database.Database)
 
-def convert_to_df(data: dict | list, columns: list = None) -> object:
+def convert_to_df(data: dict | list, columns: list = None) -> pd.DataFrame:
     """
     Convert a dict to a DataFrame.
     """
@@ -84,7 +84,7 @@ def transaction_data_validator(data: dict):
             valid = "Provide value for {0}".format(key)
             return valid 
     
-    if data["type"] == "Transfer" and data["payment_from"] == data["payment_to"]:
+    if data.get("type")== "Transfer" and data["payment_from"] == data["payment_to"]:
         valid = "Payment from and to fields cannot be same"
         return valid
 

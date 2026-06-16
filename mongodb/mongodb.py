@@ -169,8 +169,6 @@ class MongoDB:
             ]
            if collection_name:
                results = self._db[collection_name].aggregate(pipeline)
-               if results is None:
-                   return "Error", "No data found"
                return "Success", list(results)
            else:
                return "Error", "Unexpected error"
@@ -179,7 +177,7 @@ class MongoDB:
         
     def get_investment_records(self, month: str, year: str) -> tuple:
         try:
-           collection_name = st.secrets.get("custom_db_info", {}).get("savings_collection", None)
+           collection_name = st.secrets.get("custom_db_info", {}).get("transaction_collection", None)
            pipeline = [
                 {
                     "$match": {
@@ -187,6 +185,8 @@ class MongoDB:
                             "$regex": "{0}-{1}".format(month, year),
                             "$options": "i",
                         },
+                        "category": "Investment",
+                        "inv_type": {"$exists": True}
                     }
                 },
                 {
@@ -196,7 +196,6 @@ class MongoDB:
                 },
                 {
                     "$project": {
-                        "_id": 0,
                         "Amount": "$amount",
                         "Type": "$inv_type",
                         "Payment Source": "$payment_from",
@@ -291,8 +290,8 @@ class MongoDB:
     def insert_investment_records(self, data: dict) -> tuple:
         try:
             transaction_collection_name = st.secrets.get("custom_db_info", {}).get("transaction_collection", None)
-            investment_collection_name = st.secrets.get("custom_db_info", {}).get("savings_collection", None)
-            if transaction_collection_name and investment_collection_name:
+
+            if transaction_collection_name:
                 # Insert a new transaction record
                 tst_data = {
                     "amount": data["amount"],
@@ -300,19 +299,10 @@ class MongoDB:
                     "date": data["date"],
                     "payment_from": data["payment_from"],
                     "category": "Investment",
-                    "spent_by": data["spent_by"]
+                    "spent_by": data["spent_by"],
+                    "inv_type": data["inv_type"]
                 }
                 self._db[transaction_collection_name].insert_one(tst_data)
-
-                # Insert investment record
-                inv_record = {
-                    "amount": data["amount"],
-                    "date": data["date"],
-                    "payment_from": data["payment_from"],
-                    "inv_type": data["inv_type"],
-                    "spent_by": data["spent_by"]
-                }
-                self._db[investment_collection_name].insert_one(inv_record)
                 return "Success", None
             else: 
                 return "Error", "Unexpected error"
